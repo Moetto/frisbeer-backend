@@ -28,7 +28,7 @@ class TeamViewSet(viewsets.ModelViewSet):
 class RoundSerializer(serializers.ModelSerializer):
     class Meta:
         model = Round
-        fields = ('id', 'winner', 'team1', 'team2')
+        fields = ('id', 'winner', 'team1', 'team2', 'date')
 
 
 class RoundViewSet(viewsets.ModelViewSet):
