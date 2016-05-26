@@ -15,10 +15,10 @@ Including another URLconf
 """
 from django.conf.urls import url, include
 from django.contrib import admin
-from frisbeer.views import router
+import frisbeer.urls
 
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
     url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
-    url(r'API/', include(router.urls)),
+    url(r'^', include(frisbeer.urls, namespace="frisbeer")),
 ]

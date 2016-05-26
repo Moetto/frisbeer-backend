@@ -1,5 +1,7 @@
-from rest_framework import routers, serializers, viewsets
-from frisbeer.models import Player, Team, Round
+from rest_framework import serializers, viewsets
+from rest_framework.exceptions import ValidationError
+
+from frisbeer.models import *
 
 
 class PlayerSerializer(serializers.ModelSerializer):
@@ -14,29 +16,39 @@ class PlayerViewSet(viewsets.ModelViewSet):
     serializer_class = PlayerSerializer
 
 
-class TeamSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Team
-        fields = ('id', 'captain', 'player1', 'player2')
+class PlayersValidator:
+    def __call__(self, values):
+        players = values.get("players", None)
+        if not players or len(players) != 6:
+            raise ValidationError("Round requires exactly six players")
 
 
-class TeamViewSet(viewsets.ModelViewSet):
-    queryset = Team.objects.all()
-    serializer_class = TeamSerializer
+class RoundPlayerValidator:
+    def __call__(self, values):
+        team1 = set(values["team1"])
+        team2 = set(values["team2"])
+        if len(team1) != 3 or len(team2) != 3:
+            raise ValidationError("Teams must consist of exactly three players")
+
+        if team1.intersection(team2):
+            raise ValidationError("Teams can't contain same players")
 
 
 class RoundSerializer(serializers.ModelSerializer):
     class Meta:
         model = Round
-        fields = ('id', 'winner', 'team1', 'team2', 'date')
+        fields = ('id', 'winner', 'date', 'team1', "team2",)
+        validators = [
+            RoundPlayerValidator()
+        ]
+
+    def create(self, validated_data):
+        round = super().create(validated_data)
+        return round
 
 
 class RoundViewSet(viewsets.ModelViewSet):
     queryset = Round.objects.all()
     serializer_class = RoundSerializer
 
-router = routers.DefaultRouter()
-router.register(r'players', PlayerViewSet)
-router.register(r'teams', TeamViewSet)
-router.register(r'rounds', RoundViewSet)
 from frisbeer import signals
