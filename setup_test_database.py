@@ -13,9 +13,18 @@ from frisbeer.models import *
 from django.contrib.auth.models import User
 
 Player.objects.all().delete()
+players = []
 for name in ("jsloth", "T3mu", "Runtu", "ivanhoe_", "lepikko", "Paju"):
     player = Player(name=name)
     player.save()
+    players.append(player)
+
+g = Game(name="Testipeli")
+g.save()
+g.team1 = players[0:3]
+g.team2 = players[3:]
+g.save()
+
 
 try:
     admin = User.objects.create_superuser(username="admin", password="adminpassu", email="")

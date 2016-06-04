@@ -23,7 +23,7 @@ class PlayersValidator:
             raise ValidationError("Round requires exactly six players")
 
 
-class RoundPlayerValidator:
+class GamePlayerValidator:
     def __call__(self, values):
         team1 = set(values["team1"])
         team2 = set(values["team2"])
@@ -34,21 +34,16 @@ class RoundPlayerValidator:
             raise ValidationError("Teams can't contain same players")
 
 
-class RoundSerializer(serializers.ModelSerializer):
+class GameSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Round
-        fields = ('id', 'winner', 'date', 'team1', "team2",)
+        model = Game
         validators = [
-            RoundPlayerValidator()
+            GamePlayerValidator()
         ]
 
-    def create(self, validated_data):
-        round = super().create(validated_data)
-        return round
 
-
-class RoundViewSet(viewsets.ModelViewSet):
-    queryset = Round.objects.all()
-    serializer_class = RoundSerializer
+class GameViewSet(viewsets.ModelViewSet):
+    queryset = Game.objects.all()
+    serializer_class = GameSerializer
 
 from frisbeer import signals

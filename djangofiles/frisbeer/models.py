@@ -10,20 +10,14 @@ class Player(models.Model):
         return self.name
 
 
-class PlayerRoundRelation(models.Model):
-    player = models.ForeignKey(Player)
-    round = models.ForeignKey("Round")
-    captain = models.BooleanField(default=False)
-    team = models.IntegerField(choices=((1, "Team 1",), (2, "Team 2",)))
-
-
-class Round(models.Model):
-    TEAM_1_VICTORY = 1
-    TEAM_2_VICTORY = 2
+class Game(models.Model):
     team1 = models.ManyToManyField(Player, related_name="team1")
     team2 = models.ManyToManyField(Player, related_name="team2")
-    winner = models.IntegerField(choices=((TEAM_1_VICTORY, "Team 1",), (TEAM_2_VICTORY, "Team 2",)))
     date = models.DateTimeField(default=now)
+    name = models.CharField(max_length=250, blank=True, null=True)
+    description = models.TextField(max_length=2500, blank=True, null=True)
+    team1_score = models.IntegerField(default=0)
+    team2_score = models.IntegerField(default=0)
 
     def __str__(self):
         return "{} - {}".format(", ".join(self.team1.values_list("name", flat=True)), ", ".join(self.team2.values_list("name", flat=True)))
