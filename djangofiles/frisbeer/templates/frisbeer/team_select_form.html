@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Frisbeer team select form</title>
+</head>
+<body>
+
+{% if teams %}
+    <div>
+        {{ teams.team1_elo }}
+        {% for player in teams.team1 %}
+            {{ player }}
+            {% if not forloop.last %}
+                -
+            {% endif %}
+        {% endfor %}
+        <p>vs.</p>
+        {{ teams.team2_elo }}
+        {% for player in teams.team2 %}
+            {{ player }}
+            {% if not forloop.last %}
+                -
+            {% endif %}
+        {% endfor %}
+    </div>
+{% endif %}
+<form accept-charset="" method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <input type="submit" value="Calculate best teams"/>
+</form>
+</body>
+</html>
