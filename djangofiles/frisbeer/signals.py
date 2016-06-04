@@ -1,4 +1,4 @@
-from django.db.models.signals import m2m_changed
+from django.db.models.signals import m2m_changed, post_save
 from django.dispatch import receiver
 
 from server.settings import ELO_K
@@ -7,6 +7,7 @@ from frisbeer.models import *
 
 @receiver(m2m_changed, sender=Game.team2.through)
 @receiver(m2m_changed, sender=Game.team1.through)
+@receiver(post_save, sender=Game)
 def update_elo(sender, instance, **kwargs):
     print("Updating elos (mabby)")
 
@@ -22,9 +23,6 @@ def update_elo(sender, instance, **kwargs):
 
     def calculate_team_elo(team):
         return sum([player.elo for player in team]) / len(team)
-
-    if kwargs["action"] != "post_add":
-        return
 
     if not instance.team1.exists() or not instance.team2.exists():
         return
