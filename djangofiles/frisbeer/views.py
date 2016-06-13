@@ -60,8 +60,11 @@ def validate_players(value):
 
 
 class EqualTeamForm(forms.Form):
-    players = forms.MultipleChoiceField(choices=[(player.id, player.name) for player in list(Player.objects.all())],
-                                        validators=[validate_players])
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['players'] = forms.MultipleChoiceField(
+            choices=[(player.id, player.name) for player in list(Player.objects.all())],
+            validators=[validate_players])
 
 
 class TeamCreateView(FormView):
@@ -80,7 +83,7 @@ class TeamCreateView(FormView):
             team2 = players - set(team1)
             elo1 = calculate_team_elo(team1)
             elo2 = calculate_team_elo(team2)
-            elo_list.append((abs(elo1-elo2), team1, team2))
+            elo_list.append((abs(elo1 - elo2), team1, team2))
         ideal_teams = sorted(elo_list, key=itemgetter(0))[0]
         teams = {
             "team1": ideal_teams[1],
@@ -90,5 +93,6 @@ class TeamCreateView(FormView):
         }
 
         return render(self.request, 'frisbeer/team_select_form.html', {"form": form, "teams": teams})
+
 
 from frisbeer import signals
