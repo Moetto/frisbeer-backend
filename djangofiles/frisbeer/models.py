@@ -5,7 +5,7 @@ from django.db import models
 class Player(models.Model):
     elo = models.IntegerField(default=1500)
     name = models.CharField(max_length=100)
-    rank = models.CharField(max_length=50)
+    rank = models.CharField(max_length=50, default="")
 
     def __str__(self):
         return self.name
@@ -21,4 +21,8 @@ class Game(models.Model):
     team2_score = models.IntegerField(default=0)
 
     def __str__(self):
-        return "{} - {}".format(", ".join(self.team1.values_list("name", flat=True)), ", ".join(self.team2.values_list("name", flat=True)))
+        return "{0} {2} - {3} {1}".format(", ".join(self.team1.values_list("name", flat=True)),
+                                          ", ".join(self.team2.values_list("name", flat=True)),
+                                          self.team1_score,
+                                          self.team2_score,
+                                          )

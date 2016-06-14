@@ -1,10 +1,12 @@
 from collections import OrderedDict
 
-from django.db.models import F
+from django.contrib.auth.models import User
 from django.db.models.signals import m2m_changed, post_save
 from django.dispatch import receiver
+from rest_framework.authtoken.models import Token
 
-from server.settings import ELO_K
+from server import settings
+
 from frisbeer.models import *
 
 from scipy.stats import norm, zscore
@@ -39,7 +41,7 @@ def update_elo(instance):
         Ra = player.elo
         Rb = opponent_elo
         Ea = 1 / (1 + 10 ** ((Rb - Ra) / 400))
-        return ELO_K * (actual_score - Ea)
+        return settings.ELO_K * (actual_score - Ea)
 
     def calculate_team_elo(team):
         return sum([player.elo for player in team]) / len(team)
@@ -89,3 +91,9 @@ def calculate_ranks():
                 break
     for player in players:
         player.save()
+
+
+@receiver(post_save, sender=User)
+def create_auth_token(sender, instance=None, created=False, **kwargs):
+    if created:
+        Token.objects.create(user=instance)
