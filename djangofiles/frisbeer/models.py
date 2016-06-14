@@ -5,6 +5,7 @@ from django.db import models
 class Player(models.Model):
     elo = models.IntegerField(default=1500)
     name = models.CharField(max_length=100)
+    rank = models.CharField(max_length=50)
 
     def __str__(self):
         return self.name
