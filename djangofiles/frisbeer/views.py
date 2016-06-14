@@ -64,7 +64,8 @@ class EqualTeamForm(forms.Form):
         super().__init__(*args, **kwargs)
         self.fields['players'] = forms.MultipleChoiceField(
             choices=[(player.id, player.name) for player in list(Player.objects.all())],
-            validators=[validate_players])
+            validators=[validate_players],
+            widget=forms.CheckboxSelectMultiple)
 
 
 class TeamCreateView(FormView):
