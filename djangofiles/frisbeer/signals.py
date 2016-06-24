@@ -1,6 +1,7 @@
 from collections import OrderedDict
 
 from django.contrib.auth.models import User
+from django.db.models import Sum
 from django.db.models.signals import m2m_changed, post_save
 from django.dispatch import receiver
 from rest_framework.authtoken.models import Token
@@ -72,13 +73,10 @@ def update_elo(instance):
 
 
 def calculate_ranks():
-    all_players = Player.objects.all()
-    players = []
-    for player in all_players:
-        if player.team1.filter(team1_score=2).count() \
-                + player.team2.filter(team2_score=2).count() >= 3:
-            players.append(player)
-
+    Player.objects.update(rank="")
+    players = Player.objects.annotate(score=Sum('team1__team1_score')).filter(score__gte=4)
+    if not players:
+        return
     scores = [player.elo for player in players]
     z_scores = zscore(scores)
 

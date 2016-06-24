@@ -23,8 +23,17 @@ g = Game(name="Testipeli")
 g.save()
 g.team1 = players[0:3]
 g.team2 = players[3:]
+g.team1_score = 2
+g.team2_score = 1
 g.save()
 
+g = Game(name="Testipeli2")
+g.save()
+g.team1 = players[1:4]
+g.team2 = players[0:0] + players[4:]
+g.team1_score = 2
+g.team2_score = 0
+g.save()
 
 try:
     admin = User.objects.create_superuser(username="admin", password="adminpassu", email="")
