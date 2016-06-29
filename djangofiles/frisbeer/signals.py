@@ -95,9 +95,8 @@ def calculate_ranks():
             if player_z_score > required_z_score:
                 player_list[i].rank = rank_distribution[required_z_score]
             else:
-                player_list[i].save()
                 break
-
+        player_list[i].save()
 
 @receiver(post_save, sender=User)
 def create_auth_token(sender, instance=None, created=False, **kwargs):
