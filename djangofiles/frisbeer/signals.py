@@ -18,10 +18,9 @@ ranks = ["Klipsu I", "Klipsu II", "Klipsu III", "Klipsu IV", "Klipsu Mestari", "
          "Legendaarinen Nalle Mestari", "Korkein Ykkösluokan Mestari", "Urheileva Alkoholisti"]
 
 rank_distribution = OrderedDict()
-step = 1 / len(ranks)
-for i in range(18):
-    rank_distribution[norm.ppf(step * i)] = ranks[i]
-
+step = 6 / (len(ranks) -2)
+for i in range(len(ranks)-2):
+    rank_distribution[-3 + i * step] = ranks[i]
 
 @receiver(m2m_changed, sender=Game.team2.through)
 @receiver(m2m_changed, sender=Game.team1.through)
