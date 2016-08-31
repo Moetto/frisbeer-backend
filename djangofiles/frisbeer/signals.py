@@ -73,11 +73,14 @@ def update_elo(instance):
 
 def calculate_ranks():
     Player.objects.update(rank="")
-    players = Player.objects.annotate(score1=Sum('team1__team1_score')).annotate(score2=Sum('team2__team2_score')).filter()
+    # players = Player.objects.annotate(score1=Sum('team1__team1_score')).annotate(score2=Sum('team2__team2_score')).filter()
+    team1_scores = Player.objects.annotate(score1=Sum('team1__team1_score'))
+    team2_scores = Player.objects.annotate(score2=Sum('team2__team2_score'))
     player_list = []
-    for player in list(players):
+    for player in list(team1_scores):
         s1 = player.score1 if player.score1 is not None else 0
-        s2 = player.score2 if player.score2 is not None else 0
+        player2 = team2_scores.get(id=player.id)
+        s2 = player2.score2 if player2.score2 is not None else 0
         if s1+s2 >= 4:
             player_list.append(player)
     if not player_list:
