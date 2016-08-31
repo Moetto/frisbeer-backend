@@ -29,28 +29,57 @@ class PlayersValidator:
             raise ValidationError("Round requires exactly six players")
 
 
-class GamePlayerValidator:
-    def __call__(self, values):
-        team1 = set(values["team1"])
-        team2 = set(values["team2"])
+class GameSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Game
+
+    def validate(self, attrs):
+        su = super().validate(attrs)
+        team1 = set(su.get("team1", self.instance.team1.all()))
+        team2 = set(su.get("team2", self.instance.team2.all()))
+
         if len(team1) != 3 or len(team2) != 3:
             raise ValidationError("Teams must consist of exactly three players")
 
         if team1.intersection(team2):
             raise ValidationError("Teams can't contain same players")
-
-
-class GameSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Game
-        validators = [
-            GamePlayerValidator()
-        ]
+        return su
 
 
 class GameViewSet(viewsets.ModelViewSet):
     queryset = Game.objects.all()
     serializer_class = GameSerializer
+
+
+class LocationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Location
+
+    def validate(self, attrs):
+        su = super().validate(attrs)
+        try:
+            longitude = su.get("longitude", self.instance.longitude)
+        except AttributeError:
+            longitude = None
+
+        try:
+            latitude = su.get("latitude", self.instance.latitude)
+        except AttributeError:
+            latitude = None
+
+        if latitude is not None and (latitude > 90 or latitude < -90):
+            raise ValidationError("Latitude must be between -90 and 90")
+        if longitude is not None and (longitude > 180 or longitude < -180):
+            raise ValidationError("Longitude must be between -180 and 180")
+        if (longitude is None and latitude is not None) or (longitude is not None and latitude is None):
+            raise ValidationError("If longitude is provided then latitude is required and vice versa. Both can be null.")
+
+        return su
+
+
+class LocationViewSet(viewsets.ModelViewSet):
+    queryset = Location.objects.all()
+    serializer_class = LocationSerializer
 
 
 def validate_players(value):
