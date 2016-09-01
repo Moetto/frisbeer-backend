@@ -35,8 +35,22 @@ class GameSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         su = super().validate(attrs)
-        team1 = set(su.get("team1", self.instance.team1.all()))
-        team2 = set(su.get("team2", self.instance.team2.all()))
+
+        team1 = su.get("team1")
+        if team1 is None:
+            try:
+                team1 = self.instance.team1.all()
+            except AttributeError:
+                raise ValidationError("Both teams are required. Team 1 is missing")
+        team1 = set(team1)
+
+        team2 = su.get("team2")
+        if team2 is None:
+            try:
+                team2 = self.instance.team2.all()
+            except AttributeError:
+                raise ValidationError("Both teams are required. Team 2 is missing")
+        team2 = set(team2)
 
         if len(team1) != 3 or len(team2) != 3:
             raise ValidationError("Teams must consist of exactly three players")
