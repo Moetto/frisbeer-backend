@@ -30,7 +30,7 @@ g.save()
 g = Game(name="Testipeli2")
 g.save()
 g.team1 = players[1:4]
-g.team2 = players[0:0] + players[4:]
+g.team2 = players[0:1] + players[4:]
 g.team1_score = 2
 g.team2_score = 0
 g.save()

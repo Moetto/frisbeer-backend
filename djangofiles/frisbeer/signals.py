@@ -1,3 +1,4 @@
+# -*. coding: utf-8 -*-
 from collections import OrderedDict
 
 from django.contrib.auth.models import User
@@ -38,7 +39,7 @@ def update_elo(instance):
             actual_score = 1
         else:
             actual_score = 0
-        Ra = player.elo
+        Ra = player
         Rb = opponent_elo
         Ea = 1 / (1 + 10 ** ((Rb - Ra) / 400))
         return settings.ELO_K * (actual_score - Ea)
@@ -59,14 +60,14 @@ def update_elo(instance):
         team1_pregame_elo = calculate_team_elo(team1)
         for player in team1:
             player_elo_change = 0
-            player_elo_change += game.team1_score * calculate_elo_change(player, team2_pregame_elo, True)
-            player_elo_change += game.team2_score * calculate_elo_change(player, team2_pregame_elo, False)
+            player_elo_change += game.team1_score * calculate_elo_change(team1_pregame_elo, team2_pregame_elo, True)
+            player_elo_change += game.team2_score * calculate_elo_change(team1_pregame_elo, team2_pregame_elo, False)
             player.elo += player_elo_change
             player.save()
         for player in team2:
             player_elo_change = 0
-            player_elo_change += game.team2_score * calculate_elo_change(player, team1_pregame_elo, True)
-            player_elo_change += game.team1_score * calculate_elo_change(player, team1_pregame_elo, False)
+            player_elo_change += game.team2_score * calculate_elo_change(team2_pregame_elo, team1_pregame_elo, True)
+            player_elo_change += game.team1_score * calculate_elo_change(team2_pregame_elo, team1_pregame_elo, False)
             player.elo += player_elo_change
             player.save()
 
