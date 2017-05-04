@@ -4,7 +4,7 @@ from operator import itemgetter
 from django import forms
 from django.core.exceptions import ValidationError
 from django.shortcuts import render
-from django.views.generic import FormView
+from django.views.generic import FormView, ListView
 from rest_framework import serializers, viewsets
 
 from frisbeer.models import *
@@ -13,7 +13,7 @@ from frisbeer.models import *
 class PlayerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Player
-        fields = ('id', 'name', 'elo', 'rank')
+        fields = ('id', 'name', 'elo', 'rank', 'score')
         read_only_fields = ('elo',)
 
 
@@ -137,6 +137,10 @@ class TeamCreateView(FormView):
         }
 
         return render(self.request, 'frisbeer/team_select_form.html', {"form": form, "teams": teams})
+
+class ScoreListView(ListView):
+    model = Player
+    ordering = ['-score']
 
 
 from frisbeer import signals

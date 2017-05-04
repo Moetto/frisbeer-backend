@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Frisbeer scoreboard</title>
+</head>
+<body>
+
+{% if object_list %}
+    <div>
+        <table>
+        {% for player in object_list %}
+            <tr>
+                <td>{{player.name}}</td><td>{{ player.score }}</td><td>{{ player.rank }}</td>
+            </tr>
+        {% endfor %}
+
+        </table>
+    </div>
+{% endif %}
+</form>
+</body>
+</html>

@@ -1,5 +1,6 @@
 # -*. coding: utf-8 -*-
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
+from math import exp
 
 from django.contrib.auth.models import User
 from django.db.models import Sum
@@ -28,6 +29,7 @@ for i in range(len(ranks)-2):
 @receiver(post_save, sender=Game)
 def update_statistics(sender, instance, **kwargs):
     update_elo(instance)
+    update_score(instance)
     calculate_ranks()
 
 
@@ -72,6 +74,36 @@ def update_elo(instance):
             player.save()
 
 
+def update_score(instance):
+    print("Updating scores (mabby)")
+    def calculate_score(player):
+        if player['games'] == 0:
+            return 0
+        return int((player['wins'] / player['rounds']) * (1 - exp(-player['games'] / 2) + ((player['games'] / 9) ** (1/3))) * 1000)
+
+    if not instance.team1.exists() or not instance.team2.exists():
+        return
+
+    games = Game.objects.all()
+
+    players = {}
+    for game in games:
+        team1 = game.team1.all()
+        team2 = game.team2.all()
+        for team in [team1, team2]:
+            for player in team:
+                if not player in players:
+                    players[player] = defaultdict(int)
+                players[player]['games'] += 1
+                players[player]['wins'] += game.team1_score if team is team1 else game.team2_score
+                players[player]['rounds'] += game.team1_score + game.team2_score
+
+    for player, data in players.items():
+        print("Getting score for {}".format(player))
+        player.score = calculate_score(data)
+        player.save()
+
+
 def calculate_ranks():
     Player.objects.update(rank="")
     # players = Player.objects.annotate(score1=Sum('team1__team1_score')).annotate(score2=Sum('team2__team2_score')).filter()
@@ -86,7 +118,7 @@ def calculate_ranks():
             player_list.append(player)
     if not player_list:
         return
-    scores = [player.elo for player in player_list]
+    scores = [player.score for player in player_list]
     if len(set(scores)) == 1:
         z_scores = [0.0 for i in range(len(player_list))]
     else:
@@ -100,6 +132,7 @@ def calculate_ranks():
             else:
                 break
         player_list[i].save()
+
 
 @receiver(post_save, sender=User)
 def create_auth_token(sender, instance=None, created=False, **kwargs):
