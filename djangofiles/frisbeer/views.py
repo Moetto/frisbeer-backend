@@ -32,6 +32,7 @@ class PlayersValidator:
 class GameSerializer(serializers.ModelSerializer):
     class Meta:
         model = Game
+        fields = '__all__'
 
     def validate(self, attrs):
         su = super().validate(attrs)
