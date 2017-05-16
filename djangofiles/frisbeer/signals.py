@@ -79,7 +79,7 @@ def update_score(instance):
     def calculate_score(player):
         if player['games'] == 0:
             return 0
-        return int((player['wins'] / player['rounds']) * (1 - exp(-player['games'] / 2) + ((player['games'] / 9) ** (1/3))) * 1000)
+        return int((player['wins'] / player['rounds']) * (1 - exp(-player['games'] / 4)) * 1000)
 
     if not instance.team1.exists() or not instance.team2.exists():
         return
