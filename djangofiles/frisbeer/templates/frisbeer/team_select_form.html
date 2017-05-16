@@ -8,7 +8,6 @@
 
 {% if teams %}
     <div>
-        {{ teams.team1_elo }}
         {% for player in teams.team1 %}
             {{ player }}
             {% if not forloop.last %}
@@ -16,7 +15,6 @@
             {% endif %}
         {% endfor %}
         <p>vs.</p>
-        {{ teams.team2_elo }}
         {% for player in teams.team2 %}
             {{ player }}
             {% if not forloop.last %}

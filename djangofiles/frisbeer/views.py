@@ -13,8 +13,8 @@ from frisbeer.models import *
 class PlayerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Player
-        fields = ('id', 'name', 'elo', 'rank', 'score')
-        read_only_fields = ('elo',)
+        fields = ('id', 'name', 'rank', 'score')
+        read_only_fields = ('score', 'rank')
 
 
 class PlayerViewSet(viewsets.ModelViewSet):
