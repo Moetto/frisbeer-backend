@@ -1,4 +1,3 @@
-# -*. coding: utf-8 -*-
 from collections import OrderedDict, defaultdict
 from math import exp
 
@@ -23,6 +22,7 @@ rank_distribution = OrderedDict()
 step = 6 / (len(ranks) -2)
 for i in range(len(ranks)-2):
     rank_distribution[-3 + i * step] = ranks[i]
+
 
 @receiver(m2m_changed, sender=Game.team2.through)
 @receiver(m2m_changed, sender=Game.team1.through)
@@ -106,7 +106,6 @@ def update_score(instance):
 
 def calculate_ranks():
     Player.objects.update(rank="")
-    # players = Player.objects.annotate(score1=Sum('team1__team1_score')).annotate(score2=Sum('team2__team2_score')).filter()
     team1_scores = Player.objects.annotate(score1=Sum('team1__team1_score'))
     team2_scores = Player.objects.annotate(score2=Sum('team2__team2_score'))
     player_list = []
