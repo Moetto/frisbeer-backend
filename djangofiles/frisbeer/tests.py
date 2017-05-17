@@ -7,8 +7,10 @@ from frisbeer.models import Player, Game
 from frisbeer.signals import calculate_ranks, update_elo
 
 from frisbeer.signals import create_auth_token, update_statistics
+
 post_save.disconnect(update_statistics)
 m2m_changed.disconnect(update_statistics)
+
 
 class RankingTestCase(TestCase):
     fixtures = ['../testdata.json']

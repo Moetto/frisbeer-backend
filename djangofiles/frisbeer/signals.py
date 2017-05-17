@@ -1,6 +1,7 @@
 from collections import OrderedDict, defaultdict
 from math import exp
 
+import logging
 from django.contrib.auth.models import User
 from django.db.models import Sum
 from django.db.models.signals import m2m_changed, post_save
@@ -11,7 +12,7 @@ from server import settings
 
 from frisbeer.models import *
 
-from scipy.stats import norm, zscore
+from scipy.stats import zscore
 
 ranks = ["Klipsu I", "Klipsu II", "Klipsu III", "Klipsu IV", "Klipsu Mestari", "Klipsu Eliitti Mestari",
          "Kultapossu I", "Kultapossu II", "Kultapossu III", "Kultapossu Mestari", "Mestari Heittäjä I",
@@ -19,8 +20,8 @@ ranks = ["Klipsu I", "Klipsu II", "Klipsu III", "Klipsu IV", "Klipsu Mestari", "
          "Legendaarinen Nalle Mestari", "Korkein Ykkösluokan Mestari", "Urheileva Alkoholisti"]
 
 rank_distribution = OrderedDict()
-step = 6 / (len(ranks) -2)
-for i in range(len(ranks)-2):
+step = 6 / (len(ranks) - 2)
+for i in range(len(ranks) - 2):
     rank_distribution[-3 + i * step] = ranks[i]
 
 
@@ -34,7 +35,7 @@ def update_statistics(sender, instance, **kwargs):
 
 
 def update_elo(instance):
-    print("Updating elos (mabby)")
+    logging.info("Updating elos (mabby)")
 
     def calculate_elo_change(player, opponent_elo, win):
         if win:
@@ -75,7 +76,8 @@ def update_elo(instance):
 
 
 def update_score(instance):
-    print("Updating scores (mabby)")
+    logging.info("Updating scores (mabby)")
+
     def calculate_score(player):
         if player['games'] == 0:
             return 0
@@ -99,7 +101,7 @@ def update_score(instance):
                 players[player]['rounds'] += game.team1_score + game.team2_score
 
     for player, data in players.items():
-        print("Getting score for {}".format(player))
+        logging.debug("Getting score for {}".format(player))
         player.score = calculate_score(data)
         player.save()
 
@@ -113,7 +115,7 @@ def calculate_ranks():
         s1 = player.score1 if player.score1 is not None else 0
         player2 = team2_scores.get(id=player.id)
         s2 = player2.score2 if player2.score2 is not None else 0
-        if s1+s2 >= 4:
+        if s1 + s2 >= 4:
             player_list.append(player)
     if not player_list:
         return

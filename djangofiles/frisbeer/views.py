@@ -1,6 +1,7 @@
 import itertools
 from operator import itemgetter
 
+import logging
 from django import forms
 from django.core.exceptions import ValidationError
 from django.shortcuts import render
@@ -87,7 +88,8 @@ class LocationSerializer(serializers.ModelSerializer):
         if longitude is not None and (longitude > 180 or longitude < -180):
             raise ValidationError("Longitude must be between -180 and 180")
         if (longitude is None and latitude is not None) or (longitude is not None and latitude is None):
-            raise ValidationError("If longitude is provided then latitude is required and vice versa. Both can be null.")
+            raise ValidationError(
+                "If longitude is provided then latitude is required and vice versa. Both can be null.")
 
         return su
 
@@ -98,7 +100,7 @@ class LocationViewSet(viewsets.ModelViewSet):
 
 
 def validate_players(value):
-    print("Validating players")
+    logging.debug("Validating players")
     if len(value) != 6 or len(set(value)) != 6:
         raise ValidationError("Select exactly six different players")
 
@@ -138,6 +140,7 @@ class TeamCreateView(FormView):
         }
 
         return render(self.request, 'frisbeer/team_select_form.html', {"form": form, "teams": teams})
+
 
 class ScoreListView(ListView):
     model = Player
