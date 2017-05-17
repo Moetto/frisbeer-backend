@@ -52,7 +52,7 @@ def update_elo(instance):
     if not instance.team1.exists() or not instance.team2.exists():
         return
 
-    games = Game.objects.all().order_by("date")
+    games = Game.objects.filter(approved=True).order_by("date")
     Player.objects.all().update(elo=1500)
 
     for game in games:

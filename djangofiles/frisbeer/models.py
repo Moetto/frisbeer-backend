@@ -21,6 +21,7 @@ class Game(models.Model):
     location = models.ForeignKey('Location', blank=True, null=True)
     team1_score = models.IntegerField(default=0)
     team2_score = models.IntegerField(default=0)
+    approved = models.BooleanField(default=True)
 
     def __str__(self):
         return "{0} {2} - {3} {1}".format(", ".join(self.team1.values_list("name", flat=True)),
