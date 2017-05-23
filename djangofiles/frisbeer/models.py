@@ -2,11 +2,19 @@ from django.utils.timezone import now
 from django.db import models
 
 
+class Rank(models.Model):
+    name = models.CharField(max_length=100, blank=True, unique=True)
+    image_url = models.CharField(max_length=1000, blank=True)
+
+    def __str__(self):
+        return self.name
+
+
 class Player(models.Model):
     elo = models.IntegerField(default=1500)
     score = models.IntegerField(default=0)
     name = models.CharField(max_length=100, unique=True)
-    rank = models.CharField(max_length=50, default="", blank=True)
+    rank_link = models.ForeignKey(Rank, null=True)
 
     def __str__(self):
         return self.name

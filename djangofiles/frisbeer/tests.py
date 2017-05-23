@@ -1,3 +1,4 @@
+from os import path
 from django.db.models.signals import post_save, m2m_changed
 from django.dispatch import Signal
 from django.test import TestCase
@@ -13,11 +14,11 @@ m2m_changed.disconnect(update_statistics)
 
 
 class RankingTestCase(TestCase):
-    fixtures = ['../testdata.json']
+    fixtures = [path.join(path.dirname(path.abspath(__file__)), 'testdata.json')]
 
     def test_calculate_ranks(self):
-        update_elo(Game.objects.all()[0])
-        calculate_ranks()
+        update_elo()
+        # calculate_ranks(Game.objects.all()[0])
         self.assertEqual(4, Player.objects.filter(rank="").count())
         self.assertEqual(2, Player.objects.filter(rank__regex=".+").count())
         for player in Player.objects.all():
