@@ -6,15 +6,39 @@ from django import forms
 from django.core.exceptions import ValidationError
 from django.shortcuts import render
 from django.views.generic import FormView, ListView
-from rest_framework import serializers, viewsets
+from django.templatetags.static import static
+
+from rest_framework import serializers, viewsets, permissions, mixins
+from rest_framework.viewsets import GenericViewSet
 
 from frisbeer.models import *
 
 
+class RankSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Rank
+        fields = ('name', 'image_url', 'numerical_value')
+        read_only_fields = ["numerical_value", "name", "image_url"]
+
+    def to_representation(self, instance):
+        return {
+            'numerical_value': instance.numerical_value,
+            'name': instance.name,
+            'image_url': static(instance.image_url)
+        }
+
+
+class RankViewSet(mixins.RetrieveModelMixin, mixins.ListModelMixin, GenericViewSet):
+    queryset = Rank.objects.all()
+    serializer_class = RankSerializer
+
+
 class PlayerSerializer(serializers.ModelSerializer):
+    rank = RankSerializer(many=False, read_only=True)
+
     class Meta:
         model = Player
-        fields = ('id', 'name', 'rank', 'score')
+        fields = ('id', 'name', 'score', 'rank')
         read_only_fields = ('score', 'rank')
 
 
@@ -70,6 +94,7 @@ class GameViewSet(viewsets.ModelViewSet):
 class LocationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Location
+        fields = '__all__'
 
     def validate(self, attrs):
         su = super().validate(attrs)
@@ -145,6 +170,3 @@ class TeamCreateView(FormView):
 class ScoreListView(ListView):
     model = Player
     ordering = ['-score']
-
-
-from frisbeer import signals

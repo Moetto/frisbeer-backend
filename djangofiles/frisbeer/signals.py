@@ -14,27 +14,28 @@ from frisbeer.models import *
 
 from scipy.stats import zscore
 
-ranks = ["Klipsu I", "Klipsu II", "Klipsu III", "Klipsu IV", "Klipsu Mestari", "Klipsu Eliitti Mestari",
-         "Kultapossu I", "Kultapossu II", "Kultapossu III", "Kultapossu Mestari", "Mestari Heittäjä I",
-         "Mestari Heittäjä II", "Mestari Heittäjä Eliitti", "Arvostettu Jallu Mestari", "Legendaarinen Nalle",
-         "Legendaarinen Nalle Mestari", "Korkein Ykkösluokan Mestari", "Urheileva Alkoholisti"]
-
-rank_distribution = OrderedDict()
-step = 6 / (len(ranks) - 2)
-for i in range(len(ranks) - 2):
-    rank_distribution[-3 + i * step] = ranks[i]
-
 
 @receiver(m2m_changed, sender=Game.team2.through)
 @receiver(m2m_changed, sender=Game.team1.through)
 @receiver(post_save, sender=Game)
 def update_statistics(sender, instance, **kwargs):
-    update_elo(instance)
-    update_score(instance)
-    calculate_ranks()
+    if not instance.team1.exists() or not instance.team2.exists():
+        logging.debug("Game was saved, but hasn't been played yet")
+        return
+
+    update_elo()
+    update_score()
+    player_ids = list(instance.team1.all().values_list('id', flat=True))
+    player_ids.extend(list(instance.team2.all().values_list('id', flat=True)))
+    calculate_ranks(player_ids)
 
 
-def update_elo(instance):
+def update_elo():
+    """
+    Calculate new elos for all players. 
+    
+    Update is done for all players because matches are possibly added in non-chronological order
+    """
     logging.info("Updating elos (mabby)")
 
     def calculate_elo_change(player, opponent_elo, win):
@@ -50,9 +51,6 @@ def update_elo(instance):
     def calculate_team_elo(team):
         return sum([player.elo for player in team]) / len(team)
 
-    if not instance.team1.exists() or not instance.team2.exists():
-        return
-
     games = Game.objects.filter(approved=True).order_by("date")
     Player.objects.all().update(elo=1500)
 
@@ -66,25 +64,24 @@ def update_elo(instance):
             player_elo_change += game.team1_score * calculate_elo_change(team1_pregame_elo, team2_pregame_elo, True)
             player_elo_change += game.team2_score * calculate_elo_change(team1_pregame_elo, team2_pregame_elo, False)
             player.elo += player_elo_change
+            logging.debug("{0} elo changed {1:0.2f}".format(player.name, player_elo_change))
             player.save()
         for player in team2:
             player_elo_change = 0
             player_elo_change += game.team2_score * calculate_elo_change(team2_pregame_elo, team1_pregame_elo, True)
             player_elo_change += game.team1_score * calculate_elo_change(team2_pregame_elo, team1_pregame_elo, False)
             player.elo += player_elo_change
+            logging.debug("{0} elo changed {1:0.2f}".format(player.name, player_elo_change))
             player.save()
 
 
-def update_score(instance):
+def update_score():
     logging.info("Updating scores (mabby)")
 
     def calculate_score(player):
         if player['games'] == 0:
             return 0
         return int((player['wins'] / player['rounds']) * (1 - exp(-player['games'] / 4)) * 1000)
-
-    if not instance.team1.exists() or not instance.team2.exists():
-        return
 
     games = Game.objects.all()
 
@@ -101,15 +98,27 @@ def update_score(instance):
                 players[player]['rounds'] += game.team1_score + game.team2_score
 
     for player, data in players.items():
-        logging.debug("Getting score for {}".format(player))
+        old_score = player.score
         player.score = calculate_score(data)
-        player.save()
+        if old_score != player.score:
+            logging.debug("{} old score: {}, new score {}".format(player.name, old_score, player.score))
+            player.save()
 
 
-def calculate_ranks():
-    Player.objects.update(rank="")
-    team1_scores = Player.objects.annotate(score1=Sum('team1__team1_score'))
-    team2_scores = Player.objects.annotate(score2=Sum('team2__team2_score'))
+def calculate_ranks(player_ids):
+    """
+    Calculate new ranks for all layers
+    """
+    logging.info("Calculating new ranks")
+    ranks = list(Rank.objects.all())
+
+    rank_distribution = OrderedDict()
+    step = 6 / (len(ranks) - 2)
+    for i in range(len(ranks) - 2):
+        rank_distribution[-3 + i * step] = ranks[i]
+
+    team1_scores = Player.objects.filter(id__in=player_ids).annotate(score1=Sum('team1__team1_score'))
+    team2_scores = Player.objects.filter(id__in=player_ids).annotate(score2=Sum('team2__team2_score'))
     player_list = []
     for player in list(team1_scores):
         s1 = player.score1 if player.score1 is not None else 0
@@ -118,21 +127,29 @@ def calculate_ranks():
         if s1 + s2 >= 4:
             player_list.append(player)
     if not player_list:
+        logging.debug("No players with four round victories")
         return
     scores = [player.score for player in player_list]
     if len(set(scores)) == 1:
+        logging.debug("Only one player {} with rank".format(player_list[0]))
         z_scores = [0.0 for i in range(len(player_list))]
     else:
         z_scores = zscore(scores)
+        logging.debug("Players: {}".format(player_list))
+        logging.debug("Z_scores: {}".format(z_scores))
 
     for i in range(len(player_list)):
         player_z_score = z_scores[i]
+        player = player_list[i]
+        rank = None
         for required_z_score in rank_distribution.keys():
             if player_z_score > required_z_score:
-                player_list[i].rank = rank_distribution[required_z_score]
+                rank = rank_distribution[required_z_score]
             else:
                 break
-        player_list[i].save()
+        logging.debug("Setting rank {} for {}".format(rank, player.name))
+        player.rank = rank
+        player.save()
 
 
 @receiver(post_save, sender=User)
