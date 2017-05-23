@@ -11,11 +11,25 @@ from rest_framework import serializers, viewsets
 from frisbeer.models import *
 
 
+class RankSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Rank
+        fields = "__all__"
+        read_only_fields = ["id", "name", "image_url"]
+
+
+class RankViewSet(viewsets.ModelViewSet):
+    queryset = Rank.objects.all()
+    serializer_class = RankSerializer
+
+
 class PlayerSerializer(serializers.ModelSerializer):
+    rank_link = RankSerializer(many=False, read_only=True)
+
     class Meta:
         model = Player
-        fields = ('id', 'name', 'rank', 'score')
-        read_only_fields = ('score', 'rank')
+        fields = ('id', 'name', 'score', 'rank_link')
+        read_only_fields = ('score', 'rank_link')
 
 
 class PlayerViewSet(viewsets.ModelViewSet):
@@ -145,6 +159,3 @@ class TeamCreateView(FormView):
 class ScoreListView(ListView):
     model = Player
     ordering = ['-score']
-
-
-from frisbeer import signals
