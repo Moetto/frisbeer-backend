@@ -6,7 +6,10 @@ from django import forms
 from django.core.exceptions import ValidationError
 from django.shortcuts import render
 from django.views.generic import FormView, ListView
-from rest_framework import serializers, viewsets
+from django.templatetags.static import static
+
+from rest_framework import serializers, viewsets, permissions, mixins
+from rest_framework.viewsets import GenericViewSet
 
 from frisbeer.models import *
 
@@ -17,19 +20,26 @@ class RankSerializer(serializers.ModelSerializer):
         fields = "__all__"
         read_only_fields = ["id", "name", "image_url"]
 
+    def to_representation(self, instance):
+        return {
+            'id': instance.id,
+            'name': instance.name,
+            'image_url': static(instance.image_url)
+        }
 
-class RankViewSet(viewsets.ModelViewSet):
+
+class RankViewSet(mixins.RetrieveModelMixin, mixins.ListModelMixin, GenericViewSet):
     queryset = Rank.objects.all()
     serializer_class = RankSerializer
 
 
 class PlayerSerializer(serializers.ModelSerializer):
-    rank_link = RankSerializer(many=False, read_only=True)
+    rank = RankSerializer(many=False, read_only=True)
 
     class Meta:
         model = Player
-        fields = ('id', 'name', 'score', 'rank_link')
-        read_only_fields = ('score', 'rank_link')
+        fields = ('id', 'name', 'score', 'rank')
+        read_only_fields = ('score', 'rank')
 
 
 class PlayerViewSet(viewsets.ModelViewSet):

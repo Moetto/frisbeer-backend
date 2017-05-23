@@ -14,8 +14,14 @@ ranks = ["Klipsu I", "Klipsu II", "Klipsu III", "Klipsu IV", "Klipsu Mestari", "
          "Mestari Heittäjä II", "Mestari Heittäjä Eliitti", "Arvostettu Jallu Mestari", "Legendaarinen Nalle",
          "Legendaarinen Nalle Mestari", "Korkein Ykkösluokan Mestari", "Urheileva Alkoholisti"]
 
-from frisbeer.models import Rank
+from frisbeer.models import Rank, Player
+from frisbeer.signals import calculate_ranks
+
+Rank.objects.all().delete()
 
 for r in ranks:
-    rank = Rank(name=r)
+    rank = Rank(name=r, image_url="ranks/{}.png".format(r.replace(" ", "-")))
     rank.save()
+
+
+calculate_ranks(Player.objects.all().values_list('id', flat=True))

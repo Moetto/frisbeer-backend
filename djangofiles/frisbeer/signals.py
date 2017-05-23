@@ -32,7 +32,9 @@ def update_statistics(sender, instance, **kwargs):
 
     update_elo()
     update_score()
-    calculate_ranks()
+    player_ids = list(instance.team1.all().values_list('id', flat=True))
+    player_ids.extend(list(instance.team2.all().values_list('id', flat=True)))
+    calculate_ranks(player_ids)
 
 
 def update_elo():
@@ -110,14 +112,13 @@ def update_score():
             player.save()
 
 
-def calculate_ranks():
+def calculate_ranks(player_ids):
     """
     Calculate new ranks for all layers
     """
     logging.info("Calculating new ranks")
-    Player.objects.update(rank_link=None)
-    team1_scores = Player.objects.annotate(score1=Sum('team1__team1_score'))
-    team2_scores = Player.objects.annotate(score2=Sum('team2__team2_score'))
+    team1_scores = Player.objects.filter(id__in=player_ids).annotate(score1=Sum('team1__team1_score'))
+    team2_scores = Player.objects.filter(id__in=player_ids).annotate(score2=Sum('team2__team2_score'))
     player_list = []
     for player in list(team1_scores):
         s1 = player.score1 if player.score1 is not None else 0
@@ -134,6 +135,7 @@ def calculate_ranks():
         z_scores = [0.0 for i in range(len(player_list))]
     else:
         z_scores = zscore(scores)
+        logging.debug("Players: {}".format(player_list))
         logging.debug("Z_scores: {}".format(z_scores))
 
     for i in range(len(player_list)):
@@ -142,10 +144,10 @@ def calculate_ranks():
         for required_z_score in rank_distribution.keys():
             if player_z_score > required_z_score:
                 rank = rank_distribution[required_z_score]
-                player.rank_link = rank
+                player.rank = rank
             else:
                 break
-        logging.debug("Setting rank {} for {}".format(player.rank_link, player.name))
+        logging.debug("Setting rank {} for {}".format(player.rank, player.name))
         player.save()
 
 
