@@ -14,13 +14,6 @@ from frisbeer.models import *
 
 from scipy.stats import zscore
 
-ranks = list(Rank.objects.all())
-
-rank_distribution = OrderedDict()
-step = 6 / (len(ranks) - 2)
-for i in range(len(ranks) - 2):
-    rank_distribution[-3 + i * step] = ranks[i]
-
 
 @receiver(m2m_changed, sender=Game.team2.through)
 @receiver(m2m_changed, sender=Game.team1.through)
@@ -117,6 +110,13 @@ def calculate_ranks(player_ids):
     Calculate new ranks for all layers
     """
     logging.info("Calculating new ranks")
+    ranks = list(Rank.objects.all())
+
+    rank_distribution = OrderedDict()
+    step = 6 / (len(ranks) - 2)
+    for i in range(len(ranks) - 2):
+        rank_distribution[-3 + i * step] = ranks[i]
+
     team1_scores = Player.objects.filter(id__in=player_ids).annotate(score1=Sum('team1__team1_score'))
     team2_scores = Player.objects.filter(id__in=player_ids).annotate(score2=Sum('team2__team2_score'))
     player_list = []
@@ -141,13 +141,14 @@ def calculate_ranks(player_ids):
     for i in range(len(player_list)):
         player_z_score = z_scores[i]
         player = player_list[i]
+        rank = None
         for required_z_score in rank_distribution.keys():
             if player_z_score > required_z_score:
                 rank = rank_distribution[required_z_score]
-                player.rank = rank
             else:
                 break
-        logging.debug("Setting rank {} for {}".format(player.rank, player.name))
+        logging.debug("Setting rank {} for {}".format(rank, player.name))
+        player.rank = rank
         player.save()
 
 

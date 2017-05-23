@@ -14,7 +14,7 @@ class Player(models.Model):
     elo = models.IntegerField(default=1500)
     score = models.IntegerField(default=0)
     name = models.CharField(max_length=100, unique=True)
-    rank = models.ForeignKey(Rank, null=True)
+    rank = models.ForeignKey(Rank, null=True, on_delete=models.SET_NULL)
 
     def __str__(self):
         return self.name
