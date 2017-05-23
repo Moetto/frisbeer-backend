@@ -17,12 +17,12 @@ from frisbeer.models import *
 class RankSerializer(serializers.ModelSerializer):
     class Meta:
         model = Rank
-        fields = "__all__"
-        read_only_fields = ["id", "name", "image_url"]
+        fields = ('name', 'image_url', 'numerical_value')
+        read_only_fields = ["numerical_value", "name", "image_url"]
 
     def to_representation(self, instance):
         return {
-            'id': instance.id,
+            'numerical_value': instance.numerical_value,
             'name': instance.name,
             'image_url': static(instance.image_url)
         }

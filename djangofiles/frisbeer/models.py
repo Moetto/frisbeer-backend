@@ -5,6 +5,7 @@ from django.db import models
 class Rank(models.Model):
     name = models.CharField(max_length=100, blank=True, unique=True)
     image_url = models.CharField(max_length=1000, blank=True)
+    numerical_value = models.IntegerField(unique=True)
 
     def __str__(self):
         return self.name
