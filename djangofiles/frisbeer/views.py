@@ -94,6 +94,7 @@ class GameViewSet(viewsets.ModelViewSet):
 class LocationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Location
+        fields = '__all__'
 
     def validate(self, attrs):
         su = super().validate(attrs)
