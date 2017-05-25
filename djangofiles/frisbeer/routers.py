@@ -1,5 +1,5 @@
 from rest_framework import routers
-from frisbeer.views import PlayerViewSet, GameViewSet, LocationViewSet, RankViewSet
+from frisbeer.views import *
 
 router = routers.DefaultRouter()
 router.register(r'players', PlayerViewSet)

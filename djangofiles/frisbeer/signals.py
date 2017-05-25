@@ -15,19 +15,19 @@ from frisbeer.models import *
 from scipy.stats import zscore
 
 
-@receiver(m2m_changed, sender=Game.team2.through)
-@receiver(m2m_changed, sender=Game.team1.through)
+@receiver(m2m_changed, sender=Game.players.through)
+@receiver(m2m_changed, sender=Game.players.through)
 @receiver(post_save, sender=Game)
 def update_statistics(sender, instance, **kwargs):
-    if not instance.team1.exists() or not instance.team2.exists():
-        logging.debug("Game was saved, but hasn't been played yet")
-        return
 
     update_elo()
     update_score()
-    player_ids = list(instance.team1.all().values_list('id', flat=True))
-    player_ids.extend(list(instance.team2.all().values_list('id', flat=True)))
-    calculate_ranks(player_ids)
+
+    if not instance or not instance.can_score():
+        logging.debug("Game was saved, but hasn't been played yet. Sender %s, instance %s", sender, instance)
+        return
+
+    calculate_ranks(instance)
 
 
 def update_elo():
@@ -55,8 +55,8 @@ def update_elo():
     Player.objects.all().update(elo=1500)
 
     for game in games:
-        team1 = list(game.team1.all())
-        team2 = list(game.team2.all())
+        team1 = [r.player for r in list(game.gameplayerrelation_set.filter(team=1))]
+        team2 = [r.player for r in list(game.gameplayerrelation_set.filter(team=2))]
         team2_pregame_elo = calculate_team_elo(team2)
         team1_pregame_elo = calculate_team_elo(team1)
         for player in team1:
@@ -87,8 +87,8 @@ def update_score():
 
     players = {}
     for game in games:
-        team1 = game.team1.all()
-        team2 = game.team2.all()
+        team1 = [r.player for r in game.gameplayerrelation_set.filter(team=1)]
+        team2 = [r.player for r in game.gameplayerrelation_set.filter(team=2)]
         for team in [team1, team2]:
             for player in team:
                 if not player in players:
@@ -105,11 +105,9 @@ def update_score():
             player.save()
 
 
-def calculate_ranks(player_ids):
-    """
-    Calculate new ranks for all layers
-    """
+def calculate_ranks(game):
     logging.info("Calculating new ranks")
+    players = Player.objects.all()
     ranks = list(Rank.objects.all())
 
     rank_distribution = OrderedDict()
@@ -117,14 +115,15 @@ def calculate_ranks(player_ids):
     for i in range(len(ranks) - 2):
         rank_distribution[-3 + i * step] = ranks[i]
 
-    team1_scores = Player.objects.filter(id__in=player_ids).annotate(score1=Sum('team1__team1_score'))
-    team2_scores = Player.objects.filter(id__in=player_ids).annotate(score2=Sum('team2__team2_score'))
     player_list = []
-    for player in list(team1_scores):
-        s1 = player.score1 if player.score1 is not None else 0
-        player2 = team2_scores.get(id=player.id)
-        s2 = player2.score2 if player2.score2 is not None else 0
-        if s1 + s2 >= 4:
+    for player in players:
+        s1 = player.gameplayerrelation_set.filter(team=1).aggregate(Sum('game__team1_score'))[
+            "game__team1_score__sum"] if not None else 0
+        s2 = player.gameplayerrelation_set.filter(team=2).aggregate(Sum('game__team2_score'))[
+            "game__team2_score__sum"] if not None else 0
+        s1 = s1 if s1 else 0
+        s2 = s2 if s2 else 0
+        if s1 + s2 > 4:
             player_list.append(player)
     if not player_list:
         logging.debug("No players with four round victories")
@@ -139,6 +138,10 @@ def calculate_ranks(player_ids):
         logging.debug("Z_scores: {}".format(z_scores))
 
     for i in range(len(player_list)):
+        player = player_list[i]
+        if player not in list(game.players.all()):
+            logging.debug("Not setting rank for %s because he didn't play", player)
+            break
         player_z_score = z_scores[i]
         player = player_list[i]
         rank = None
