@@ -25,8 +25,8 @@ for i in range(len(ranks) - 2):
     rank_distribution[-3 + i * step] = ranks[i]
 
 
-@receiver(m2m_changed, sender=Game.team2.through)
-@receiver(m2m_changed, sender=Game.team1.through)
+@receiver(m2m_changed, sender=Game.players.through)
+@receiver(m2m_changed, sender=Game.players.through)
 @receiver(post_save, sender=Game)
 def update_statistics(sender, instance, **kwargs):
     update_elo(instance)
@@ -50,15 +50,15 @@ def update_elo(instance):
     def calculate_team_elo(team):
         return sum([player.elo for player in team]) / len(team)
 
-    if not instance.team1.exists() or not instance.team2.exists():
+    if not instance.can_score():
         return
 
     games = Game.objects.filter(approved=True).order_by("date")
     Player.objects.all().update(elo=1500)
 
     for game in games:
-        team1 = list(game.team1.all())
-        team2 = list(game.team2.all())
+        team1 = list(game.players.filter(team=GamePlayerRelation.Team1))
+        team2 = list(game.players.filter(team=GamePlayerRelation.Team2))
         team2_pregame_elo = calculate_team_elo(team2)
         team1_pregame_elo = calculate_team_elo(team1)
         for player in team1:
@@ -83,7 +83,7 @@ def update_score(instance):
             return 0
         return int((player['wins'] / player['rounds']) * (1 - exp(-player['games'] / 4)) * 1000)
 
-    if not instance.team1.exists() or not instance.team2.exists():
+    if not instance.can_score():
         return
 
     games = Game.objects.all()
@@ -108,6 +108,7 @@ def update_score(instance):
 
 def calculate_ranks():
     Player.objects.update(rank="")
+    
     team1_scores = Player.objects.annotate(score1=Sum('team1__team1_score'))
     team2_scores = Player.objects.annotate(score2=Sum('team2__team2_score'))
     player_list = []

@@ -1,5 +1,3 @@
-import itertools
-from operator import itemgetter
 
 import logging
 from django import forms
@@ -146,5 +144,3 @@ class ScoreListView(ListView):
     model = Player
     ordering = ['-score']
 
-
-from frisbeer import signals
