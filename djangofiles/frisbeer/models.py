@@ -15,7 +15,7 @@ class Player(models.Model):
 
 
 class Game(models.Model):
-    players = models.ManyToManyField(Player, related_name='Games', through='GamePlayerRelation')
+    players = models.ManyToManyField(Player, through='GamePlayerRelation')
     date = models.DateTimeField(default=now)
     name = models.CharField(max_length=250, blank=True, null=True)
     description = models.TextField(max_length=2500, blank=True, null=True)
@@ -27,8 +27,8 @@ class Game(models.Model):
 
     def __str__(self):
         return "{0} {2} - {3} {1}".format(
-            ", ".join(self.players.filter(team=GamePlayerRelation.Team1).values_list("name", flat=True)),
-            ", ".join(self.players.filter(team=GamePlayerRelation.Team2).values_list("name", flat=True)),
+            ", ".join(self.players.filter(gameplayerrelation__team=GamePlayerRelation.Team1).values_list("name", flat=True)),
+            ", ".join(self.players.filter(gameplayerrelation__team=GamePlayerRelation.Team2).values_list("name", flat=True)),
             self.team1_score,
             self.team2_score,
             )
@@ -62,8 +62,8 @@ class GamePlayerRelation(models.Model):
 
     _team_choices = ((0, Unassigned), (1, Team1), (2, Team2))
 
-    player = models.ForeignKey(Player)
-    game = models.ForeignKey(Game)
+    player = models.ForeignKey(Player, on_delete=models.CASCADE)
+    game = models.ForeignKey(Game, on_delete=models.CASCADE)
     team = models.IntegerField(choices=_team_choices, default=Unassigned)
 
 

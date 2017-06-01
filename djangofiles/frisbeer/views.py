@@ -1,10 +1,9 @@
-
 import logging
 from django import forms
 from django.core.exceptions import ValidationError
 from django.shortcuts import render
 from django.views.generic import FormView, ListView
-from rest_framework import serializers, viewsets
+from rest_framework import serializers, viewsets, generics
 
 from frisbeer.models import *
 
@@ -28,36 +27,56 @@ class PlayersValidator:
             raise ValidationError("Round requires exactly six players")
 
 
+class PlayerInGameSerializer(serializers.HyperlinkedModelSerializer):
+    id = serializers.IntegerField(source='player.id')
+    name = serializers.ReadOnlyField(source='player.name')
+    team = serializers.IntegerField()
+
+    class Meta:
+        model = GamePlayerRelation
+        fields = ('id', 'name', 'team',)
+
+
 class GameSerializer(serializers.ModelSerializer):
+    players = PlayerInGameSerializer(many=True, source='gameplayerrelation_set', partial=True)
+
     class Meta:
         model = Game
-        fields = '__all__'
+        fields = "__all__"
 
-    def validate(self, attrs):
-        su = super().validate(attrs)
+    def update(self, instance, validated_data):
+        try:
+            players = validated_data.pop('gameplayerrelation_set')
+        except KeyError:
+            players = None
+        s = super().update(instance, validated_data)
+        if players:
+            GamePlayerRelation.objects.filter(game=s).delete()
+            for player in players:
+                p = Player.objects.get(id=player["player"]["id"])
+                team = player["team"] if player["team"] else 0
+                g, created = GamePlayerRelation.objects.get_or_create(game=s, player=p)
+                g.team = team
+                g.save()
+        return s
 
-        team1 = su.get("team1")
-        if team1 is None:
-            try:
-                team1 = self.instance.team1.all()
-            except AttributeError:
-                raise ValidationError("Both teams are required. Team 1 is missing")
-        team1 = set(team1)
+    def create(self, validated_data):
+        players = validated_data.pop('gameplayerrelation_set')
+        s = super().create(validated_data)
+        if players:
+            GamePlayerRelation.objects.filter(game=s).delete()
+            for player in players:
+                p = Player.objects.get(id=player["player"]["id"])
+                team = player["team"] if player["team"] else 0
+                g, created = GamePlayerRelation.objects.get_or_create(game=s, player=p)
+                g.team = team
+                g.save()
+        return s
 
-        team2 = su.get("team2")
-        if team2 is None:
-            try:
-                team2 = self.instance.team2.all()
-            except AttributeError:
-                raise ValidationError("Both teams are required. Team 2 is missing")
-        team2 = set(team2)
 
-        if len(team1) != 3 or len(team2) != 3:
-            raise ValidationError("Teams must consist of exactly three players")
-
-        if team1.intersection(team2):
-            raise ValidationError("Teams can't contain same players")
-        return su
+class PlayerInGameViewSet(viewsets.ModelViewSet):
+    queryset = GamePlayerRelation.objects.all()
+    serializer_class = PlayerInGameSerializer
 
 
 class GameViewSet(viewsets.ModelViewSet):
@@ -143,4 +162,3 @@ class TeamCreateView(FormView):
 class ScoreListView(ListView):
     model = Player
     ordering = ['-score']
-

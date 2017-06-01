@@ -20,15 +20,7 @@ class Migration(migrations.Migration):
                 ('team', models.IntegerField(choices=[(0, 0), (1, 1), (2, 2)])),
             ],
         ),
-        migrations.RemoveField(
-            model_name='game',
-            name='team1',
-        ),
-        migrations.RemoveField(
-            model_name='game',
-            name='team2',
-        ),
-        migrations.AddField(
+       migrations.AddField(
             model_name='gameplayerrelation',
             name='game',
             field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='frisbeer.Game'),

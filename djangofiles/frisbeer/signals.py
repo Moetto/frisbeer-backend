@@ -90,8 +90,8 @@ def update_score(instance):
 
     players = {}
     for game in games:
-        team1 = game.team1.all()
-        team2 = game.team2.all()
+        team1 = game.gameplayerrelation_set.filter(team=1).player
+        team2 = game.gameplayerrelation_set.filter(team=2).player
         for team in [team1, team2]:
             for player in team:
                 if not player in players:
@@ -108,7 +108,8 @@ def update_score(instance):
 
 def calculate_ranks():
     Player.objects.update(rank="")
-    
+
+    """
     team1_scores = Player.objects.annotate(score1=Sum('team1__team1_score'))
     team2_scores = Player.objects.annotate(score2=Sum('team2__team2_score'))
     player_list = []
@@ -134,6 +135,7 @@ def calculate_ranks():
             else:
                 break
         player_list[i].save()
+    """
 
 
 @receiver(post_save, sender=User)

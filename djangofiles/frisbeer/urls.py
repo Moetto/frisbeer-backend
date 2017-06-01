@@ -8,5 +8,5 @@ urlpatterns = [
     url(r'^API/token-auth', obtain_auth_token, name="obtain_auth"),
     url(r'^API/', include(router.urls)),
     url(r'teams', views.TeamCreateView.as_view(), name="team_select"),
-    url(r'scoreboard', views.ScoreListView.as_view(), name="player-list")
+    # url(r'scoreboard', views.ScoreListView.as_view(), name="player-list")
 ]

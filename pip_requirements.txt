@@ -1,5 +1,5 @@
-django
-djangorestframework
+django>=1.11,<1.12
+djangorestframework==3.4.0
 pip
 scipy
 numpy
