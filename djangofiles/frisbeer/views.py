@@ -29,6 +29,7 @@ class RankSerializer(serializers.ModelSerializer):
 
 
 class RankViewSet(mixins.RetrieveModelMixin, mixins.ListModelMixin, GenericViewSet):
+    lookup_field = 'numerical_value'
     queryset = Rank.objects.all()
     serializer_class = RankSerializer
 
