@@ -31,7 +31,7 @@ for i in range(len(ranks) - 2):
 def update_statistics(sender, instance, **kwargs):
     update_elo(instance)
     update_score(instance)
-    calculate_ranks()
+    calculate_ranks(instance.players.values_list('id', flat=True))
 
 
 def update_elo(instance):
@@ -106,18 +106,16 @@ def update_score(instance):
         player.save()
 
 
-def calculate_ranks():
-    Player.objects.update(rank="")
-
-    """
-    team1_scores = Player.objects.annotate(score1=Sum('team1__team1_score'))
-    team2_scores = Player.objects.annotate(score2=Sum('team2__team2_score'))
+def calculate_ranks(player_ids):
+    players = Player.objects.all()
+    players.update(rank="")
     player_list = []
-    for player in list(team1_scores):
-        s1 = player.score1 if player.score1 is not None else 0
-        player2 = team2_scores.get(id=player.id)
-        s2 = player2.score2 if player2.score2 is not None else 0
-        if s1 + s2 >= 4:
+    for player in players:
+        s1 = player.gameplayerrelation_set.filter(team=1).aggregate(Sum('game__team1_score'))["game__team1_score__sum"] if not None else 0
+        s2 = player.gameplayerrelation_set.filter(team=2).aggregate(Sum('game__team2_score'))["game__team2_score__sum"] if not None else 0
+        s1 = s1 if s1 else 0
+        s2 = s2 if s2 else 0
+        if s1 + s2 > 4:
             player_list.append(player)
     if not player_list:
         return
@@ -128,6 +126,9 @@ def calculate_ranks():
         z_scores = zscore(scores)
 
     for i in range(len(player_list)):
+        player = player_list[i]
+        if player.id not in player_ids:
+            break
         player_z_score = z_scores[i]
         for required_z_score in rank_distribution.keys():
             if player_z_score > required_z_score:
@@ -135,7 +136,6 @@ def calculate_ranks():
             else:
                 break
         player_list[i].save()
-    """
 
 
 @receiver(post_save, sender=User)

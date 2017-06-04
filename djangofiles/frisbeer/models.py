@@ -15,7 +15,7 @@ class Player(models.Model):
 
 
 class Game(models.Model):
-    players = models.ManyToManyField(Player, through='GamePlayerRelation')
+    players = models.ManyToManyField(Player, related_name='games', through='GamePlayerRelation')
     date = models.DateTimeField(default=now)
     name = models.CharField(max_length=250, blank=True, null=True)
     description = models.TextField(max_length=2500, blank=True, null=True)
