@@ -53,9 +53,9 @@ class PlayersValidator:
 
 class PlayerInGameSerializer(serializers.HyperlinkedModelSerializer):
     id = serializers.IntegerField(source='player.id')
-    name = serializers.ReadOnlyField(source='player.name')
-    team = serializers.IntegerField()
-    rank = RankSerializer(source='player.rank')
+    name = serializers.ReadOnlyField(source='player.name', required=False)
+    team = serializers.IntegerField(required=False)
+    rank = RankSerializer(source='player.rank', required=False, allow_null=True)
 
     class Meta:
         model = GamePlayerRelation
@@ -79,7 +79,10 @@ class GameSerializer(serializers.ModelSerializer):
             GamePlayerRelation.objects.filter(game=s).delete()
             for player in players:
                 p = Player.objects.get(id=player["player"]["id"])
-                team = player["team"] if player["team"] else 0
+                try:
+                    team = player["team"]
+                except KeyError:
+                    team = 0
                 g, created = GamePlayerRelation.objects.get_or_create(game=s, player=p)
                 g.team = team
                 g.save()
