@@ -8,19 +8,21 @@
 
 {% if teams %}
     <div>
-        {% for player in teams.team1 %}
-            {{ player }}
+    {%  for team in teams %}
+        {% for player in team %}
+            <span{% if player.rank %} style="font-weight: bold"{% endif %}>
+            {{ player.name }} ({{ player.score }})
+            </span>
             {% if not forloop.last %}
                 -
             {% endif %}
         {% endfor %}
-        <p>vs.</p>
-        {% for player in teams.team2 %}
-            {{ player }}
-            {% if not forloop.last %}
-                -
-            {% endif %}
-        {% endfor %}
+        {% if forloop.counter0|divisibleby:2 %}
+            <p>vs.</p>
+        {% elif not forloop.last %}
+            <p>and...</p>
+        {% endif %}
+    {%  endfor %}
     </div>
 {% endif %}
 <form accept-charset="" method="post">

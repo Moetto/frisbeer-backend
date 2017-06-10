@@ -9,6 +9,7 @@ from django.views.generic import FormView, ListView
 from rest_framework import serializers, viewsets
 
 from frisbeer.models import *
+from frisbeer.teamutil import form_teams
 
 
 class PlayerSerializer(serializers.ModelSerializer):
@@ -100,9 +101,11 @@ class LocationViewSet(viewsets.ModelViewSet):
 
 
 def validate_players(value):
+    def check_power2(num):
+        return num and not num & (num - 1)
     logging.debug("Validating players")
-    if len(value) != 6 or len(set(value)) != 6:
-        raise ValidationError("Select exactly six different players")
+    if len(value) % 6 or not check_power2(int(len(value) / 6)):
+        raise ValidationError("Select a number of players divisible by six and a power of 2")
 
 
 class EqualTeamForm(forms.Form):
@@ -125,19 +128,7 @@ class TeamCreateView(FormView):
         elo_list = []
         players = set(Player.objects.filter(id__in=form.cleaned_data["players"]))
         possibilities = itertools.combinations(players, 3)
-        for possibility in possibilities:
-            team1 = possibility
-            team2 = players - set(team1)
-            elo1 = calculate_team_elo(team1)
-            elo2 = calculate_team_elo(team2)
-            elo_list.append((abs(elo1 - elo2), team1, team2))
-        ideal_teams = sorted(elo_list, key=itemgetter(0))[0]
-        teams = {
-            "team1": ideal_teams[1],
-            "team1_elo": calculate_team_elo(ideal_teams[1]),
-            "team2": ideal_teams[2],
-            "team2_elo": calculate_team_elo(ideal_teams[2]),
-        }
+        teams = form_teams(players, key=lambda p: p.elo, n=3)
 
         return render(self.request, 'frisbeer/team_select_form.html', {"form": form, "teams": teams})
 
