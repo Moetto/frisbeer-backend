@@ -1,5 +1,5 @@
 django>=1.11,<1.12
-djangorestframework==3.4.0
+djangorestframework>=3.6.0,<3.7
 pip
 scipy
 numpy

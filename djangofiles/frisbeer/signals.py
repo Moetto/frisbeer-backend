@@ -51,7 +51,7 @@ def update_elo():
     def calculate_team_elo(team):
         return sum([player.elo for player in team]) / len(team)
 
-    games = Game.objects.filter(approved=True).order_by("date")
+    games = Game.objects.filter(state=Game.APPROVED).order_by("date")
     Player.objects.all().update(elo=1500)
 
     for game in games:
@@ -83,7 +83,7 @@ def update_score():
             return 0
         return int((player['wins'] / player['rounds']) * (1 - exp(-player['games'] / 4)) * 1000)
 
-    games = Game.objects.all()
+    games = Game.objects.filter(state=Game.APPROVED)
 
     players = {}
     for game in games:

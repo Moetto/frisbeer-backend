@@ -1,6 +1,6 @@
-from django.core.exceptions import ValidationError
 from django.templatetags.static import static
 from rest_framework import serializers
+from rest_framework.exceptions import ValidationError
 
 from frisbeer.models import Rank, Player, GamePlayerRelation, Game, Location
 
@@ -38,7 +38,7 @@ class PlayersValidator:
 class PlayerInGameSerializer(serializers.HyperlinkedModelSerializer):
     id = serializers.IntegerField(source='player.id')
     name = serializers.ReadOnlyField(source='player.name', required=False)
-    team = serializers.IntegerField(required=False)
+    team = serializers.IntegerField(required=False, read_only=True)
     rank = RankSerializer(source='player.rank', required=False, allow_null=True)
 
     class Meta:
@@ -53,23 +53,58 @@ class GameSerializer(serializers.ModelSerializer):
         model = Game
         fields = "__all__"
 
+    def validate(self, attrs):
+        admin = self.context['request'].user.is_staff
+        game = self.instance
+        state = attrs.get('state', game.state if game else None)
+        players = attrs.get('gameplayerrelation_set', game.players if game else None)
+        team1_score = attrs.get('team1_score', game.team1_score if game else 0)
+        team2_score = attrs.get('team2_score', game.team2_score if game else 0)
+
+        if state:
+            if game and game.state > state and not admin:
+                raise ValidationError("Only admins can roll back game state")
+            if state >= Game.APPROVED and not admin:
+                raise ValidationError("Only admins can approve games and edit approved games")
+            if state >= Game.READY and len(players) != 6:
+                raise ValidationError("A game without exactly six players must be in pending state")
+
+            if state >= Game.PLAYED:
+                if game.team1_score + game.team2_score > 3:
+                    raise ValidationError("Too many round wins. Frisbeer is played best of three")
+                if game.state >= Game.READY and game.players.count() != 6:
+                    raise ValidationError("The game needs 6 players to be ready")
+                if state >= Game.PLAYED and team1_score != 2 and team2_score != 2:
+                    raise ValidationError("One team needs two round wins to win the game")
+                if team1_score != 2 and team2_score != 2:
+                    raise ValidationError("One team needs two round wins to win the game")
+
+        if len(players) > 6:
+            raise ValidationError("Game can't have more than 6 players")
+
+        return attrs
+
     def update(self, instance, validated_data):
         try:
             players = validated_data.pop('gameplayerrelation_set')
         except KeyError:
             players = None
+        old_state = instance.state
+        new_state = validated_data.get('state', old_state)
+
         s = super().update(instance, validated_data)
         if players:
             GamePlayerRelation.objects.filter(game=s).delete()
             for player in players:
                 p = Player.objects.get(id=player["player"]["id"])
-                try:
-                    team = player["team"]
-                except KeyError:
-                    team = 0
+                team = player.get("team", 0)
                 g, created = GamePlayerRelation.objects.get_or_create(game=s, player=p)
                 g.team = team
                 g.save()
+
+        if old_state == Game.PENDING and new_state >= Game.READY:
+            s.create_teams()
+
         return s
 
     def create(self, validated_data):
@@ -79,10 +114,14 @@ class GameSerializer(serializers.ModelSerializer):
             GamePlayerRelation.objects.filter(game=s).delete()
             for player in players:
                 p = Player.objects.get(id=player["player"]["id"])
-                team = player["team"] if player["team"] else 0
+                team = player.get("team", 0)
                 g, created = GamePlayerRelation.objects.get_or_create(game=s, player=p)
                 g.team = team
                 g.save()
+
+        if s.state >= Game.READY:
+            s.create_teams()
+
         return s
 
 

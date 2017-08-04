@@ -1,7 +1,6 @@
 import logging
 
 from django import forms
-from django.core.exceptions import ValidationError
 from django.shortcuts import render
 from django.views.generic import FormView, ListView
 from rest_framework import viewsets, mixins
@@ -28,6 +27,14 @@ class PlayerInGameViewSet(viewsets.ModelViewSet):
 
 
 class GameViewSet(viewsets.ModelViewSet):
+    """
+    Game
+    list:
+    Get all games
+
+    create:
+    Start a new pending game. Continue updating game with PATCH
+    """
     queryset = Game.objects.all()
     serializer_class = GameSerializer
 

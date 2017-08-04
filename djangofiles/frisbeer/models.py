@@ -1,5 +1,6 @@
 import itertools
 from operator import itemgetter
+
 from django.utils.timezone import now
 from django.db import models
 
@@ -24,26 +25,42 @@ class Player(models.Model):
 
 
 class Game(models.Model):
+    PENDING = 0
+    READY = 1
+    PLAYED = 2
+    APPROVED = 3
+
+    game_state_choices = ((PENDING, "Pending"),
+                          (READY, "Ready"),
+                          (PLAYED, "Played"),
+                          (APPROVED, "Approved"))
+
     players = models.ManyToManyField(Player, related_name='games', through='GamePlayerRelation')
     date = models.DateTimeField(default=now)
     name = models.CharField(max_length=250, blank=True, null=True)
     description = models.TextField(max_length=2500, blank=True, null=True)
     location = models.ForeignKey('Location', blank=True, null=True)
-    team1_score = models.IntegerField(default=0)
-    team2_score = models.IntegerField(default=0)
-    approved = models.BooleanField(default=False)
-    played = models.BooleanField(default=False)
+    team1_score = models.IntegerField(default=0, choices=((0, 0), (1, 1), (2, 2)))
+    team2_score = models.IntegerField(default=0, choices=((0, 0), (1, 1), (2, 2)))
+    state = models.IntegerField(choices=game_state_choices, default=PENDING,
+                                help_text="0: pending - the game has been proposed but is still missing players. "
+                                          "1: ready - the game can be played now. Setting this state creates teams. "
+                                          "2: played - the game has been played and results are in. "
+                                          "4: approved - admin has approved the game and "
+                                          "it's results are used in calculating ranks.")
 
     def __str__(self):
         return "{0} {2} - {3} {1}".format(
-            ", ".join(self.players.filter(gameplayerrelation__team=GamePlayerRelation.Team1).values_list("name", flat=True)),
-            ", ".join(self.players.filter(gameplayerrelation__team=GamePlayerRelation.Team2).values_list("name", flat=True)),
+            ", ".join(
+                self.players.filter(gameplayerrelation__team=GamePlayerRelation.Team1).values_list("name", flat=True)),
+            ", ".join(
+                self.players.filter(gameplayerrelation__team=GamePlayerRelation.Team2).values_list("name", flat=True)),
             self.team1_score,
             self.team2_score,
-            )
+        )
 
     def can_score(self):
-        return self.approved and self.played and now() > self.date and self.players.count() == 6
+        return self.state >= Game.APPROVED
 
     def create_teams(self):
         def calculate_team_elo(team):
@@ -59,8 +76,11 @@ class Game(models.Model):
             elo2 = calculate_team_elo(team2)
             elo_list.append((abs(elo1 - elo2), team1, team2))
         ideal_teams = sorted(elo_list, key=itemgetter(0))[0]
-        self.players.filter(id__in=[player.id for player in ideal_teams[1]]).update(team=GamePlayerRelation.Team1)
-        self.players.filter(id__in=[player.id for player in ideal_teams[2]]).update(team=GamePlayerRelation.Team2)
+        self.gameplayerrelation_set\
+            .filter(player__id__in=[player.id for player in ideal_teams[1]]).update(team=GamePlayerRelation.Team1)
+        self.gameplayerrelation_set \
+            .filter(player__id__in=[player.id for player in ideal_teams[2]]).update(team=GamePlayerRelation.Team2)
+        print(ideal_teams[0])
         self.save()
 
 
