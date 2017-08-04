@@ -3,3 +3,6 @@ djangorestframework>=3.6.0,<3.7
 pip
 scipy
 numpy
+coreapi
+pygments
+markdown
