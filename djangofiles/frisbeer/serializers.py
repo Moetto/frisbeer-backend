@@ -40,10 +40,11 @@ class PlayerInGameSerializer(serializers.HyperlinkedModelSerializer):
     name = serializers.ReadOnlyField(source='player.name', required=False)
     team = serializers.IntegerField(required=False, read_only=True)
     rank = RankSerializer(source='player.rank', required=False, allow_null=True)
+    score = serializers.IntegerField(source='player.score', required=False, read_only=True)
 
     class Meta:
         model = GamePlayerRelation
-        fields = ('id', 'name', 'team', 'rank')
+        fields = ('id', 'name', 'team', 'rank', 'score')
 
 
 class GameSerializer(serializers.ModelSerializer):
