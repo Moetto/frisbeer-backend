@@ -48,7 +48,7 @@ class PlayerInGameSerializer(serializers.HyperlinkedModelSerializer):
 
 
 class GameSerializer(serializers.ModelSerializer):
-    players = PlayerInGameSerializer(many=True, source='gameplayerrelation_set', partial=True)
+    players = PlayerInGameSerializer(many=True, source='gameplayerrelation_set', partial=True, required=False)
 
     class Meta:
         model = Game
@@ -80,7 +80,7 @@ class GameSerializer(serializers.ModelSerializer):
                 if team1_score != 2 and team2_score != 2:
                     raise ValidationError("One team needs two round wins to win the game")
 
-        if len(players) > 6:
+        if players and len(players) > 6:
             raise ValidationError("Game can't have more than 6 players")
 
         return attrs
@@ -109,7 +109,7 @@ class GameSerializer(serializers.ModelSerializer):
         return s
 
     def create(self, validated_data):
-        players = validated_data.pop('gameplayerrelation_set')
+        players = validated_data.pop('gameplayerrelation_set', [])
         s = super().create(validated_data)
         if players:
             GamePlayerRelation.objects.filter(game=s).delete()
