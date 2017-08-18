@@ -1,9 +1,15 @@
+import json
 import logging
 
 from django import forms
-from django.shortcuts import render
+from django.db import transaction
+from django.http import HttpResponse
+from django.shortcuts import render, get_object_or_404, redirect
+from django.urls import reverse
 from django.views.generic import FormView, ListView
 from rest_framework import viewsets, mixins
+from rest_framework.decorators import detail_route
+from rest_framework.exceptions import ValidationError, APIException
 from rest_framework.viewsets import GenericViewSet
 
 from frisbeer.models import *
@@ -37,6 +43,30 @@ class GameViewSet(viewsets.ModelViewSet):
     """
     queryset = Game.objects.all()
     serializer_class = GameSerializer
+
+    @detail_route(methods=['post'])
+    def add_player(self, request, pk=None):
+        game = get_object_or_404(Game, pk=pk)
+        body = request.data
+        player = get_object_or_404(Player, pk=body["id"])
+        with transaction.atomic():
+            relation = GamePlayerRelation(game=game, player=player)
+            relation.save()
+            if GamePlayerRelation.objects.filter(game=game).count() > 6:
+                raise APIException(detail="Game is already full", code=400)
+        return redirect(reverse("frisbeer:games"))
+
+    @detail_route(methods=['post'])
+    def create_teams(self, request, pk=None):
+        game = get_object_or_404(Game, pk=pk)
+        if GamePlayerRelation.objects.filter(game=game).count() != 6:
+            raise APIException("Game needs 6 players before teams can be created", code=400)
+        force = request.data.get("re_create", False)
+        game.create_teams()
+        # game.state = Game.READY
+        # game.save()
+        print("Created")
+        return redirect(reverse("frisbeer:games-detail"), **{"pk": 1})
 
 
 class LocationViewSet(viewsets.ModelViewSet):
