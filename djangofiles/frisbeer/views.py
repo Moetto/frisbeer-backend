@@ -57,6 +57,14 @@ class GameViewSet(viewsets.ModelViewSet):
         return redirect(reverse("frisbeer:games-detail", args=[pk]))
 
     @detail_route(methods=['post'])
+    def remove_player(self, request, pk=None):
+        game = get_object_or_404(Game, pk=pk)
+        body = request.data
+        player = get_object_or_404(Player, pk=body['id'])
+        get_object_or_404(GamePlayerRelation, game=game, player=player).delete()
+        return redirect(reverse("frisbeer:games-detail", args=[pk]))
+
+    @detail_route(methods=['post'])
     def create_teams(self, request, pk=None):
         game = get_object_or_404(Game, pk=pk)
         if GamePlayerRelation.objects.filter(game=game).count() != 6:
