@@ -89,6 +89,9 @@ class GamePlayerRelation(models.Model):
     Team2 = 2
     Unassigned = 0
 
+    class Meta:
+        unique_together = (("player", "game"),)
+
     _team_choices = ((0, Unassigned), (1, Team1), (2, Team2))
 
     player = models.ForeignKey(Player, on_delete=models.CASCADE)
