@@ -81,7 +81,8 @@ def update_score():
     def calculate_score(player):
         if player['games'] == 0:
             return 0
-        return int((player['wins'] / player['rounds']) * (1 - exp(-player['games'] / 4)) * 1000)
+        win_rate = player['wins'] / player['rounds'] if player['rounds'] != 0 else 0
+        return int(win_rate * (1 - exp(-player['games'] / 4)) * 1000)
 
     games = Game.objects.filter(state=Game.APPROVED)
 
