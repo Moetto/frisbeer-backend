@@ -54,7 +54,7 @@ class GameViewSet(viewsets.ModelViewSet):
             relation.save()
             if GamePlayerRelation.objects.filter(game=game).count() > 6:
                 raise APIException(detail="Game is already full", code=400)
-        return redirect(reverse("frisbeer:games"))
+        return redirect(reverse("frisbeer:games-detail", args=[pk]))
 
     @detail_route(methods=['post'])
     def create_teams(self, request, pk=None):
@@ -66,7 +66,7 @@ class GameViewSet(viewsets.ModelViewSet):
         # game.state = Game.READY
         # game.save()
         print("Created")
-        return redirect(reverse("frisbeer:games-detail"), **{"pk": 1})
+        return redirect(reverse("frisbeer:games-detail", args=[pk]))
 
 
 class LocationViewSet(viewsets.ModelViewSet):
