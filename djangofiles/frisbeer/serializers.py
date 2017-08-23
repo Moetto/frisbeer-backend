@@ -5,6 +5,34 @@ from rest_framework.exceptions import ValidationError
 from frisbeer.models import Rank, Player, GamePlayerRelation, Game, Location
 
 
+class LocationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Location
+        fields = '__all__'
+
+    def validate(self, attrs):
+        su = super().validate(attrs)
+        try:
+            longitude = su.get("longitude", self.instance.longitude)
+        except AttributeError:
+            longitude = None
+
+        try:
+            latitude = su.get("latitude", self.instance.latitude)
+        except AttributeError:
+            latitude = None
+
+        if latitude is not None and (latitude > 90 or latitude < -90):
+            raise ValidationError("Latitude must be between -90 and 90")
+        if longitude is not None and (longitude > 180 or longitude < -180):
+            raise ValidationError("Longitude must be between -180 and 180")
+        if (longitude is None and latitude is not None) or (longitude is not None and latitude is None):
+            raise ValidationError(
+                "If longitude is provided then latitude is required and vice versa. Both can be null.")
+
+        return su
+
+
 class RankSerializer(serializers.ModelSerializer):
     class Meta:
         model = Rank
@@ -48,17 +76,18 @@ class PlayerInGameSerializer(serializers.HyperlinkedModelSerializer):
 
 
 class GameSerializer(serializers.ModelSerializer):
+    location_repr = LocationSerializer(source='location', read_only=True)
     players = PlayerInGameSerializer(many=True, source='gameplayerrelation_set', partial=True, required=False)
 
     class Meta:
         model = Game
-        fields = "__all__"
+        fields = '__all__'
 
     def validate(self, attrs):
         admin = self.context['request'].user.is_staff
         game = self.instance
         state = attrs.get('state', game.state if game else None)
-        players = attrs.get('gameplayerrelation_set', game.players if game else None)
+        players = attrs.get('gameplayerrelation_set', game.players.values_list(flat=True) if game else None)
         team1_score = attrs.get('team1_score', game.team1_score if game else 0)
         team2_score = attrs.get('team2_score', game.team2_score if game else 0)
 
@@ -86,10 +115,8 @@ class GameSerializer(serializers.ModelSerializer):
         return attrs
 
     def update(self, instance, validated_data):
-        try:
-            players = validated_data.pop('gameplayerrelation_set')
-        except KeyError:
-            players = None
+        players = validated_data.pop('gameplayerrelation_set', None)
+        location = validated_data.pop('location', None)
         old_state = instance.state
         new_state = validated_data.get('state', old_state)
 
@@ -105,6 +132,9 @@ class GameSerializer(serializers.ModelSerializer):
 
         if old_state == Game.PENDING and new_state >= Game.READY:
             s.create_teams()
+
+        if location:
+            s.location = location.get('id', None)
 
         return s
 
@@ -124,31 +154,3 @@ class GameSerializer(serializers.ModelSerializer):
             s.create_teams()
 
         return s
-
-
-class LocationSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Location
-        fields = '__all__'
-
-    def validate(self, attrs):
-        su = super().validate(attrs)
-        try:
-            longitude = su.get("longitude", self.instance.longitude)
-        except AttributeError:
-            longitude = None
-
-        try:
-            latitude = su.get("latitude", self.instance.latitude)
-        except AttributeError:
-            latitude = None
-
-        if latitude is not None and (latitude > 90 or latitude < -90):
-            raise ValidationError("Latitude must be between -90 and 90")
-        if longitude is not None and (longitude > 180 or longitude < -180):
-            raise ValidationError("Longitude must be between -180 and 180")
-        if (longitude is None and latitude is not None) or (longitude is not None and latitude is None):
-            raise ValidationError(
-                "If longitude is provided then latitude is required and vice versa. Both can be null.")
-
-        return su
