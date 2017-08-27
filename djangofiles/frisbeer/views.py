@@ -69,8 +69,8 @@ class GameViewSet(viewsets.ModelViewSet):
             raise APIException("Game needs 6 players before teams can be created", code=400)
         force = request.data.get("re_create", False)
         game.create_teams()
-        # game.state = Game.READY
-        # game.save()
+        game.state = Game.READY
+        game.save()
         print("Created")
         return redirect(reverse("frisbeer:games-detail", args=[pk]))
 
