@@ -6,3 +6,4 @@ numpy
 coreapi
 pygments
 markdown
+django-cors-headers
