@@ -1,3 +1,5 @@
+import random
+import string
 import sys
 import os
 
@@ -5,6 +7,7 @@ PROJECT_PATH = 'djangofiles'
 SETTINGS_FILE = 'server.settings'
 
 sys.path.append(PROJECT_PATH)
+sys.path.append(os.path.basename(__file__))
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", SETTINGS_FILE)
 import django
 
@@ -27,3 +30,15 @@ for r in ranks:
     rank.save()
 
 calculate_ranks(Player.objects.all().values_list('id', flat=True))
+
+from django.contrib.auth.models import User
+
+password = ''.join(random.choices(string.punctuation + string.ascii_letters + string.digits, k=10))
+u, created = User.objects.get_or_create(username="admin")
+if created:
+    u.set_password(password)
+    u.is_superuser = True
+    u.is_staff = True
+    u.is_active = True
+    u.save()
+    print(password)

@@ -1,0 +1,37 @@
+version: '3'
+services:
+  frisbeer-backend:
+    image: frisbeer-backend
+    links:
+    - mariadb
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - static-content:/var/static:rw
+
+  mariadb:
+    image: mariadb:10.3
+    environment:
+      - MYSQL_RANDOM_ROOT_PASSWORD=yes
+      - MYSQL_DATABASE=frisbeer
+      - MYSQL_USER=frisbeer
+      - MYSQL_PASSWORD=supasecret
+
+  frisbeer-nginx:
+    build:
+      context: ..
+      dockerfile: docker/Nginx
+    links:
+    - frisbeer-backend
+    volumes:
+      - static-content:/var/static:ro
+    expose:
+      - "8080"
+    ports:
+      - "8080:8080"
+
+volumes:
+  static-content:
