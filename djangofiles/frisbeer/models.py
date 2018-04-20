@@ -39,6 +39,23 @@ class Season(models.Model):
     end_date = models.DateField(null=True, blank=True)
     score_algorithm = models.CharField(max_length=255, choices=ALGORITHM_CHOICES)
 
+    @staticmethod
+    def current():
+        return Season.objects.order_by('-start_date').first()
+
+    def score(self, *args, **kwargs):
+        def score_2017(games_played, rounds_played, rounds_won):
+            win_rate = rounds_won / rounds_played if rounds_played != 0 else 0
+            return int(win_rate * (1 - exp(-games_played / 4)) * 1000)
+
+        def score_2018(games_played, rounds_played, rounds_won):
+            win_rate = rounds_won / rounds_played if rounds_played != 0 else 0
+            return int(rounds_won + win_rate * (1 /(1+ exp(3- games_played / 2.5))) * 1000)
+
+        if self.score_algorithm == Season.ALGORITHM_2017:
+            return score_2017(*args, **kwargs)
+        else:
+            return score_2018(*args, **kwargs)
 
 class Game(models.Model):
     PENDING = 0
