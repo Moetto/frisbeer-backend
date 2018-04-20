@@ -78,12 +78,7 @@ def update_elo():
 def update_score():
     logging.info("Updating scores (mabby)")
 
-    def calculate_score(player):
-        if player['games'] == 0:
-            return 0
-        win_rate = player['wins'] / player['rounds'] if player['rounds'] != 0 else 0
-        return int(win_rate * (1 - exp(-player['games'] / 4)) * 1000)
-
+    season = Season.current()
     games = Game.objects.filter(state=Game.APPROVED)
 
     players = {}
@@ -100,7 +95,9 @@ def update_score():
 
     for player, data in players.items():
         old_score = player.score
-        player.score = calculate_score(data)
+        player.score = season.score(games_played=data['games'],
+                     rounds_played=data['rounds'],
+                     rounds_won=data['wins'])
         if old_score != player.score:
             logging.debug("{} old score: {}, new score {}".format(player.name, old_score, player.score))
             player.save()
