@@ -1,13 +1,10 @@
 import itertools
 from operator import itemgetter
+from math import exp
 
 from django.utils.timezone import now
 from django.db import models
 
-ALGORITHM_CHOICES = (
-    ('2017', '2017'),
-    ('2018', '2018')
-)
 
 
 class Rank(models.Model):
@@ -30,9 +27,16 @@ class Player(models.Model):
 
 
 class Season(models.Model):
+    ALGORITHM_2017 = '2017'
+    ALGORITHM_2018 = '2018'
+    ALGORITHM_CHOICES = (
+        (ALGORITHM_2017, '2017'),
+        (ALGORITHM_2018, '2018')
+    )
+
     name = models.CharField(max_length=255, unique=True)
-    start_date = models.DateField(auto_now_add=True)
-    end_date = models.DateField(blank=True)
+    start_date = models.DateField(default=now)
+    end_date = models.DateField(null=True, blank=True)
     score_algorithm = models.CharField(max_length=255, choices=ALGORITHM_CHOICES)
 
 
