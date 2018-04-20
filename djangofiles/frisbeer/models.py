@@ -4,6 +4,11 @@ from operator import itemgetter
 from django.utils.timezone import now
 from django.db import models
 
+ALGORITHM_CHOICES = (
+    ('2017', '2017'),
+    ('2018', '2018')
+)
+
 
 class Rank(models.Model):
     name = models.CharField(max_length=100, blank=True, unique=True)
@@ -22,6 +27,13 @@ class Player(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class Season(models.Model):
+    name = models.CharField(max_length=255, unique=True)
+    start_date = models.DateField(auto_now_add=True)
+    end_date = models.DateField(blank=True)
+    score_algorithm = models.CharField(max_length=255, choices=ALGORITHM_CHOICES)
 
 
 class Game(models.Model):
