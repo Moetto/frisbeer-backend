@@ -3,7 +3,7 @@ from math import exp
 
 import logging
 from django.contrib.auth.models import User
-from django.db.models import Sum
+from django.db.models import F, Sum
 from django.db.models.signals import m2m_changed, post_save
 from django.dispatch import receiver
 from rest_framework.authtoken.models import Token
@@ -52,9 +52,20 @@ def update_elo():
         return sum([player.elo for player in team]) / len(team)
 
     games = Game.objects.filter(state=Game.APPROVED).order_by("date")
+
+
     Player.objects.all().update(elo=1500)
 
+    def _elo_decay():
+        # Halves the distance from median elo for all players
+        Player.objects.all().update(elo=(F('elo')-1500)/2 + 1500)
+
+    season = "2017"
     for game in games:
+        # Perform elo decay before first game of 2018
+        if game.season.name == "2018" and season == "2017":
+            _elo_decay()
+            season = "2018"
         team1 = [r.player for r in list(game.gameplayerrelation_set.filter(team=1))]
         team2 = [r.player for r in list(game.gameplayerrelation_set.filter(team=2))]
         team2_pregame_elo = calculate_team_elo(team2)
@@ -73,6 +84,10 @@ def update_elo():
             player.elo += player_elo_change
             logging.debug("{0} elo changed {1:0.2f}".format(player.name, player_elo_change))
             player.save()
+
+    # First game not even played yet -> decay
+    if season == "2017":
+        _elo_decay()
 
 
 def update_score():
