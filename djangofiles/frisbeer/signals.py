@@ -94,7 +94,10 @@ def update_score():
     logging.info("Updating scores (mabby)")
 
     season = Season.current()
-    games = Game.objects.filter(state=Game.APPROVED)
+    games = Game.objects.filter(season_id=season.id, state=Game.APPROVED)
+
+    if not games:
+        Player.objects.all().update(score=0)
 
     players = {}
     for game in games:
