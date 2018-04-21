@@ -138,8 +138,6 @@ def calculate_ranks(game):
             "game__team1_score__sum"] or 0
         s2 = player.gameplayerrelation_set.filter(team=2, game__season_id=season.id).aggregate(Sum('game__team2_score'))[
             "game__team2_score__sum"] or 0
-        s1 = s1 if s1 else 0
-        s2 = s2 if s2 else 0
         if s1 + s2 > 4:
             player_list.append(player)
 
