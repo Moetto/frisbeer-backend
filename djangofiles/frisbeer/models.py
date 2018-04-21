@@ -1,6 +1,7 @@
 import itertools
 from operator import itemgetter
 from math import exp
+from datetime import date
 
 from django.utils.timezone import now
 from django.db import models
@@ -44,7 +45,7 @@ class Season(models.Model):
 
     @staticmethod
     def current():
-        return Season.objects.order_by('-start_date').first()
+        return Season.objects.filter(start_date__lte=date.today()).order_by('-start_date').first()
 
     def score(self, *args, **kwargs):
         def score_2017(games_played, rounds_played, rounds_won):
@@ -59,6 +60,7 @@ class Season(models.Model):
             return score_2017(*args, **kwargs)
         else:
             return score_2018(*args, **kwargs)
+
 
 class Game(models.Model):
     PENDING = 0
