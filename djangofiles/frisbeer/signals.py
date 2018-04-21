@@ -60,10 +60,10 @@ def update_elo():
         # Halves the distance from median elo for all players
         Player.objects.all().update(elo=(F('elo')-1500)/2 + 1500)
 
-    season = "2017"
+    season = 2017
     for game in games:
         # Perform elo decay before first game of 2018
-        if game.season.name == "2018" and season == "2017":
+        if game.date.year == 2018 and season == 2017:
             _elo_decay()
             season = "2018"
         team1 = [r.player for r in list(game.gameplayerrelation_set.filter(team=1))]
@@ -86,7 +86,7 @@ def update_elo():
             player.save()
 
     # First game not even played yet -> decay
-    if season == "2017":
+    if season == 2017:
         _elo_decay()
 
 
