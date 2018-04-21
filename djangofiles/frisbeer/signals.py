@@ -132,11 +132,12 @@ def calculate_ranks(game):
         rank_distribution[-3 + i * step] = ranks[i]
 
     player_list = []
+    season = Season.current()
     for player in players:
-        s1 = player.gameplayerrelation_set.filter(team=1).aggregate(Sum('game__team1_score'))[
-            "game__team1_score__sum"] if not None else 0
-        s2 = player.gameplayerrelation_set.filter(team=2).aggregate(Sum('game__team2_score'))[
-            "game__team2_score__sum"] if not None else 0
+        s1 = player.gameplayerrelation_set.filter(team=1, game__season_id=season.id).aggregate(Sum('game__team1_score'))[
+            "game__team1_score__sum"] or 0
+        s2 = player.gameplayerrelation_set.filter(team=2, game__season_id=season.id).aggregate(Sum('game__team2_score'))[
+            "game__team2_score__sum"] or 0
         s1 = s1 if s1 else 0
         s2 = s2 if s2 else 0
         if s1 + s2 > 4:
