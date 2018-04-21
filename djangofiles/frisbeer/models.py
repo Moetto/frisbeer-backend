@@ -39,6 +39,9 @@ class Season(models.Model):
     end_date = models.DateField(null=True, blank=True)
     score_algorithm = models.CharField(max_length=255, choices=ALGORITHM_CHOICES)
 
+    def __str__(self):
+        return self.name
+
     @staticmethod
     def current():
         return Season.objects.order_by('-start_date').first()
