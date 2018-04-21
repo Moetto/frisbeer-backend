@@ -142,9 +142,14 @@ def calculate_ranks(game):
         s2 = s2 if s2 else 0
         if s1 + s2 > 4:
             player_list.append(player)
+
     if not player_list:
         logging.debug("No players with four round victories")
+        for player in players:
+            player.rank = None
+            player.save()
         return
+
     scores = [player.score for player in player_list]
     if len(set(scores)) == 1:
         logging.debug("Only one player {} with rank".format(player_list[0]))
@@ -154,11 +159,12 @@ def calculate_ranks(game):
         logging.debug("Players: {}".format(player_list))
         logging.debug("Z_scores: {}".format(z_scores))
 
+
     for i in range(len(player_list)):
         player = player_list[i]
         if player not in list(game.players.all()):
             logging.debug("Not setting rank for %s because he didn't play", player)
-            break
+            continue
         player_z_score = z_scores[i]
         player = player_list[i]
         rank = None
