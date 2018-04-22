@@ -89,6 +89,9 @@ class Game(models.Model):
                                           "4: approved - admin has approved the game and "
                                           "it's results are used in calculating ranks.")
 
+    class Meta:
+        ordering = ('-date',)
+
     def __str__(self):
         return "{0} {2} - {3} {1}".format(
             ", ".join(
