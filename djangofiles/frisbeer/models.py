@@ -7,7 +7,6 @@ from django.utils.timezone import now
 from django.db import models
 
 
-
 class Rank(models.Model):
     name = models.CharField(max_length=100, blank=True, unique=True)
     image_url = models.CharField(max_length=1000, blank=True)
@@ -54,7 +53,7 @@ class Season(models.Model):
 
         def score_2018(games_played, rounds_played, rounds_won):
             win_rate = rounds_won / rounds_played if rounds_played != 0 else 0
-            return int(rounds_won + win_rate * (1 /(1+ exp(3- games_played / 2.5))) * 1000)
+            return int(rounds_won + win_rate * (1 / (1 + exp(3 - games_played / 2.5))) * 1000)
 
         if self.score_algorithm == Season.ALGORITHM_2017:
             return score_2017(*args, **kwargs)
@@ -119,7 +118,7 @@ class Game(models.Model):
             elo2 = calculate_team_elo(team2)
             elo_list.append((abs(elo1 - elo2), team1, team2))
         ideal_teams = sorted(elo_list, key=itemgetter(0))[0]
-        self.gameplayerrelation_set\
+        self.gameplayerrelation_set \
             .filter(player__id__in=[player.id for player in ideal_teams[1]]).update(team=GamePlayerRelation.Team1)
         self.gameplayerrelation_set \
             .filter(player__id__in=[player.id for player in ideal_teams[2]]).update(team=GamePlayerRelation.Team2)
