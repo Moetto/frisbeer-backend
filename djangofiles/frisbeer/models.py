@@ -102,7 +102,10 @@ class Game(models.Model):
         )
 
     def can_score(self):
-        return self.state >= Game.APPROVED
+        return self.state >= Game.APPROVED and (self.team1_score == 2 or self.team2_score == 2) \
+               and self.players.count() == 6 \
+               and self.players.filter(gameplayerrelation__team=1).count() == 3 \
+               and self.players.filter(gameplayerrelation__team=2).count() == 3
 
     def create_teams(self):
         def calculate_team_elo(team):
