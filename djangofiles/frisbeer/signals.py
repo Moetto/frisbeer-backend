@@ -1,7 +1,7 @@
-from collections import OrderedDict, defaultdict
-from math import exp
-
 import logging
+
+from collections import OrderedDict, defaultdict
+from scipy.stats import zscore
 from django.contrib.auth.models import User
 from django.db.models import F, Sum
 from django.db.models.signals import m2m_changed, post_save
@@ -9,17 +9,13 @@ from django.dispatch import receiver
 from rest_framework.authtoken.models import Token
 
 from server import settings
-
 from frisbeer.models import *
-
-from scipy.stats import zscore
 
 
 @receiver(m2m_changed, sender=Game.players.through)
 @receiver(m2m_changed, sender=Game.players.through)
 @receiver(post_save, sender=Game)
 def update_statistics(sender, instance, **kwargs):
-
     update_elo()
     update_score()
 
@@ -51,16 +47,16 @@ def update_elo():
     def calculate_team_elo(team):
         return sum([player.elo for player in team]) / len(team)
 
-    games = Game.objects.filter(state=Game.APPROVED).order_by("date")
+    def _elo_decay():
+        # Halves the distance from median elo for all players
+        Player.objects.all().update(elo=(F('elo') - 1500) / 2 + 1500)
 
+    games = Game.objects.filter(state=Game.APPROVED).order_by("date")
 
     Player.objects.all().update(elo=1500)
 
-    def _elo_decay():
-        # Halves the distance from median elo for all players
-        Player.objects.all().update(elo=(F('elo')-1500)/2 + 1500)
-
     season = 2017
+
     for game in games:
         # Perform elo decay before first game of 2018
         if game.date.year == 2018 and season == 2017:
@@ -114,8 +110,8 @@ def update_score():
     for player, data in players.items():
         old_score = player.score
         player.score = season.score(games_played=data['games'],
-                     rounds_played=data['rounds'],
-                     rounds_won=data['wins'])
+                                    rounds_played=data['rounds'],
+                                    rounds_won=data['wins'])
         if old_score != player.score:
             logging.debug("{} old score: {}, new score {}".format(player.name, old_score, player.score))
             player.save()
@@ -134,10 +130,10 @@ def calculate_ranks(game):
     player_list = []
     season = Season.current()
     for player in players:
-        s1 = player.gameplayerrelation_set.filter(team=1, game__season_id=season.id).aggregate(Sum('game__team1_score'))[
-            "game__team1_score__sum"] or 0
-        s2 = player.gameplayerrelation_set.filter(team=2, game__season_id=season.id).aggregate(Sum('game__team2_score'))[
-            "game__team2_score__sum"] or 0
+        s1 = player.gameplayerrelation_set.filter(team=1, game__season_id=season.id) \
+                 .aggregate(Sum('game__team1_score'))["game__team1_score__sum"] or 0
+        s2 = player.gameplayerrelation_set.filter(team=2, game__season_id=season.id) \
+                 .aggregate(Sum('game__team2_score'))["game__team2_score__sum"] or 0
         if s1 + s2 > 4:
             player_list.append(player)
 
@@ -156,7 +152,6 @@ def calculate_ranks(game):
         z_scores = zscore(scores)
         logging.debug("Players: {}".format(player_list))
         logging.debug("Z_scores: {}".format(z_scores))
-
 
     for i in range(len(player_list)):
         player = player_list[i]
