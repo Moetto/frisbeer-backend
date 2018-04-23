@@ -87,7 +87,16 @@ class GameSerializer(serializers.ModelSerializer):
         admin = self.context['request'].user.is_staff
         game = self.instance
         state = attrs.get('state', game.state if game else None)
-        players = attrs.get('gameplayerrelation_set', game.players.values_list(flat=True) if game else None)
+        players = attrs.get('gameplayerrelation_set', None)
+
+        team1 = []
+        team2 = []
+
+        if not players and game:
+            players = game.players.values_list(flat=True)
+            team1 = game.players.filter(gameplayerrelation__team=1).values_list(flat=True)
+            team2 = game.players.filter(gameplayerrelation__team=2).values_list(flat=True)
+
         team1_score = attrs.get('team1_score', game.team1_score if game else 0)
         team2_score = attrs.get('team2_score', game.team2_score if game else 0)
 
@@ -98,6 +107,10 @@ class GameSerializer(serializers.ModelSerializer):
                 raise ValidationError("Only admins can approve games and edit approved games")
             if state >= Game.READY and len(players) != 6:
                 raise ValidationError("A game without exactly six players must be in pending state")
+
+            if state >= Game.READY and len(team1) != 3 and len(team2) != 3:
+                raise ValidationError("Game that doesn't have teams must be in Pending state (0). "
+                                      "Create teams manually or with create_teams endpoint")
 
             if state >= Game.PLAYED:
                 if game.team1_score + game.team2_score > 3:
@@ -129,9 +142,6 @@ class GameSerializer(serializers.ModelSerializer):
                 g, created = GamePlayerRelation.objects.get_or_create(game=s, player=p)
                 g.team = team
                 g.save()
-
-        if old_state == Game.PENDING and new_state >= Game.READY:
-            s.create_teams()
 
         if location:
             s.location = location.get('id', None)
