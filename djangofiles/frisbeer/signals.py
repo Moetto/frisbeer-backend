@@ -58,6 +58,8 @@ def update_elo():
     season = 2017
 
     for game in games:
+        if not game.can_score():
+            continue
         # Perform elo decay before first game of 2018
         if game.date.year == 2018 and season == 2017:
             _elo_decay()
