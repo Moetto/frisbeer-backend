@@ -2,6 +2,7 @@ import logging
 
 from django import forms
 from django.db import transaction
+from django.http import Http404, HttpResponseBadRequest
 from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
 from django.views.generic import FormView, ListView
@@ -46,6 +47,9 @@ class GameViewSet(viewsets.ModelViewSet):
     def add_player(self, request, pk=None):
         game = get_object_or_404(Game, pk=pk)
         body = request.data
+        player_id = body.get("id", None)
+        if player_id is None:
+            return HttpResponseBadRequest("Set player in body with key id")
         player = get_object_or_404(Player, pk=body["id"])
         with transaction.atomic():
             relation = GamePlayerRelation(game=game, player=player)
