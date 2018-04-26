@@ -29,7 +29,7 @@ for r in ranks:
     rank = Rank(name=r, image_url="ranks/{}.png".format(r.replace(" ", "-")), numerical_value=i)
     rank.save()
 
-calculate_ranks(Player.objects.all().values_list('id', flat=True))
+calculate_ranks()
 
 from django.contrib.auth.models import User
 
