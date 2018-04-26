@@ -43,7 +43,7 @@ class RankSerializer(serializers.ModelSerializer):
         return {
             'numerical_value': instance.numerical_value,
             'name': instance.name,
-            'image_url': static(instance.image_url)
+            'image_url': self.context['request'].build_absolute_uri(static(instance.image_url))
         }
 
 
