@@ -24,19 +24,27 @@ for name in (
     players.add(player)
 
 Game.objects.all().delete()
+
 for i in range(10):
-    g = Game(name="Testipeli{}".format(i))
+    g = Game(name="Testipeli {}".format(i), season=Season.current())
     g.save()
     t1 = set(random.sample(players, 3))
-    g.team1 = t1
-    g.team2 = random.sample(players - t1, 3)
+    t2 = random.sample(players - t1, 3)
+    for player in t1:
+        GamePlayerRelation(player=player, game=g, team=1).save()
+    for player in t2:
+        GamePlayerRelation(player=player, game=g, team=2).save()
     g.team1_score = random.randint(0, 2)
     g.team2_score = 2 if g.team1_score < 2 else random.randint(0, 1)
-    g.approved = random.choice([True, False])
+    g.state = Game.APPROVED
     g.save()
 
 try:
+    admin = User.objects.get(username="admin")
+    admin.set_password("adminpassu")
+except:
     admin = User.objects.create_superuser(username="admin", password="adminpassu", email="")
+try:
     admin.save()
-except IntegrityError:
+except:
     pass
