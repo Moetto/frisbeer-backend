@@ -28,11 +28,8 @@ services:
     - frisbeer-backend
     volumes:
       - static-content:/var/static:ro
-    expose:
-      - "8080"
     ports:
       - "8080:8080"
 
 volumes:
   static-content:
-

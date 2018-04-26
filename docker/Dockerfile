@@ -12,6 +12,8 @@ COPY djangofiles/ /opt/frisbeer-backend/
 
 COPY create_ranks.py /opt/frisbeer-backend/create_ranks.py
 
+COPY setup_test_database.py /opt/frisbeer-backend/setup_test_database.py
+
 COPY docker/start.sh /opt/frisbeer-backend/start.sh
 
 RUN chmod +x /opt/frisbeer-backend/start.sh
