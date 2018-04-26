@@ -1,6 +1,8 @@
 import logging
 
 from collections import OrderedDict, defaultdict
+from typing import List
+
 from scipy.stats import zscore
 from django.contrib.auth.models import User
 from django.db.models import F, Sum
@@ -23,7 +25,7 @@ def update_statistics(sender, instance, **kwargs):
         logging.debug("Game was saved, but hasn't been played yet. Sender %s, instance %s", sender, instance)
         return
 
-    calculate_ranks(instance)
+    calculate_ranks(instance.players.values_list('id', flat=True))
 
 
 def update_elo():
@@ -119,7 +121,12 @@ def update_score():
             player.save()
 
 
-def calculate_ranks(game):
+def calculate_ranks(set_rank_for: List[int] = None):
+    """
+    Calculate ranks new ranks
+    :param set_rank_for: if given set rank only on players who played in this game
+    :return: None
+    """
     logging.info("Calculating new ranks")
     players = Player.objects.all()
     ranks = list(Rank.objects.all())
@@ -157,7 +164,7 @@ def calculate_ranks(game):
 
     for i in range(len(player_list)):
         player = player_list[i]
-        if player not in list(game.players.all()):
+        if set_rank_for and player.id not in set_rank_for:
             logging.debug("Not setting rank for %s because he didn't play", player)
             continue
         player_z_score = z_scores[i]
