@@ -25,7 +25,7 @@ def update_statistics(sender, instance, **kwargs):
         logging.debug("Game was saved, but hasn't been played yet. Sender %s, instance %s", sender, instance)
         return
 
-    calculate_ranks(instance.players.values_list('id', flat=True))
+    calculate_ranks()
 
 
 def update_elo():
@@ -121,10 +121,9 @@ def update_score():
             player.save()
 
 
-def calculate_ranks(set_rank_for: List[int] = None):
+def calculate_ranks():
     """
     Calculate ranks new ranks
-    :param set_rank_for: if given set rank only on players who played in this game
     :return: None
     """
     logging.info("Calculating new ranks")
@@ -163,10 +162,6 @@ def calculate_ranks(set_rank_for: List[int] = None):
         logging.debug("Z_scores: {}".format(z_scores))
 
     for i in range(len(player_list)):
-        player = player_list[i]
-        if set_rank_for and player.id not in set_rank_for:
-            logging.debug("Not setting rank for %s because he didn't play", player)
-            continue
         player_z_score = z_scores[i]
         player = player_list[i]
         rank = None

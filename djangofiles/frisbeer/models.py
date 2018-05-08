@@ -22,6 +22,9 @@ class Player(models.Model):
     name = models.CharField(max_length=100, unique=True)
     rank = models.ForeignKey(Rank, blank=True, null=True, on_delete=models.SET_NULL)
 
+    class Meta:
+        ordering = ('name',)
+
     def __str__(self):
         return self.name
 
