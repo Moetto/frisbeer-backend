@@ -75,7 +75,7 @@ class Game(models.Model):
                           (PLAYED, "Played"),
                           (APPROVED, "Approved"))
 
-    season = models.ForeignKey(Season, on_delete=models.SET_NULL, null=True)
+    season = models.ForeignKey(Season, on_delete=models.SET_NULL, null=True, default=Season.current)
 
     players = models.ManyToManyField(Player, related_name='games', through='GamePlayerRelation')
     date = models.DateTimeField(default=now)
