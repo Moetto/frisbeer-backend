@@ -2,13 +2,13 @@ import logging
 
 from django import forms
 from django.db import transaction
-from django.http import Http404, HttpResponseBadRequest
+from django.http import HttpResponseBadRequest
 from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
 from django.views.generic import FormView, ListView
 from rest_framework import viewsets, mixins
 from rest_framework.decorators import detail_route
-from rest_framework.exceptions import ValidationError, APIException
+from rest_framework.exceptions import ValidationError, APIException, PermissionDenied
 from rest_framework.viewsets import GenericViewSet
 
 from frisbeer.models import *
@@ -77,6 +77,11 @@ class GameViewSet(viewsets.ModelViewSet):
         game.save()
         print("Created")
         return redirect(reverse("frisbeer:games-detail", args=[pk]))
+
+    def destroy(self, request, *args, **kwargs):
+        if request.user and not request.user.is_superuser and self.get_object().players.count() > 0:
+            raise PermissionDenied("Only admins can delete games with players in them")
+        return super().destroy(request, *args, **kwargs)
 
 
 class LocationViewSet(viewsets.ModelViewSet):
