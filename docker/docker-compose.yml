@@ -10,7 +10,7 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - static-content:/var/www/frisbeer.win/static:rw
+      - static-content:/var/www/frisbeer/static:rw
 
   db:
     image: postgres:11
@@ -22,7 +22,7 @@ services:
     links:
     - frisbeer-backend
     volumes:
-      - static-content:/var/static:ro
+      - static-content:/var/www/frisbeer/static:ro
     ports:
       - "8080:8080"
 

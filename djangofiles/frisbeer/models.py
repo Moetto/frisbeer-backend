@@ -32,9 +32,11 @@ class Player(models.Model):
 class Season(models.Model):
     ALGORITHM_2017 = '2017'
     ALGORITHM_2018 = '2018'
+    ALGORITHM_TOP_ELO = 'elo'
     ALGORITHM_CHOICES = (
         (ALGORITHM_2017, '2017'),
-        (ALGORITHM_2018, '2018')
+        (ALGORITHM_2018, '2018'),
+        (ALGORITHM_TOP_ELO, 'Best elo')
     )
 
     name = models.CharField(max_length=255, unique=True)
@@ -50,18 +52,23 @@ class Season(models.Model):
         return Season.objects.filter(start_date__lte=date.today()).order_by('-start_date').first()
 
     def score(self, *args, **kwargs):
-        def score_2017(games_played, rounds_played, rounds_won):
+        def score_2017(games_played, rounds_played, rounds_won, *args, **kwargs):
             win_rate = rounds_won / rounds_played if rounds_played != 0 else 0
             return int(win_rate * (1 - exp(-games_played / 4)) * 1000)
 
-        def score_2018(games_played, rounds_played, rounds_won):
+        def score_2018(games_played, rounds_played, rounds_won, *args, **kwargs):
             win_rate = rounds_won / rounds_played if rounds_played != 0 else 0
             return int(rounds_won + win_rate * (1 / (1 + exp(3 - games_played / 2.5))) * 1000)
 
+        def score_elo(player):
+            return player.elo
+
         if self.score_algorithm == Season.ALGORITHM_2017:
             return score_2017(*args, **kwargs)
-        else:
+        elif self.score_algorithm == Season.ALGORITHM_2018:
             return score_2018(*args, **kwargs)
+        else:
+            return score_elo(*args, **kwargs)
 
 
 class Game(models.Model):

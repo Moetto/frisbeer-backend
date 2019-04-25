@@ -62,10 +62,13 @@ def update_elo():
     for game in games:
         if not game.can_score():
             continue
-        # Perform elo decay before first game of 2018
+        # Perform elo decay before first game of each season
         if game.date.year == 2018 and season == 2017:
             _elo_decay()
             season = "2018"
+        elif game.date.year == 2019 and season == "2018":
+            _elo_decay()
+            season = "2019"
         team1 = [r.player for r in list(game.gameplayerrelation_set.filter(team=1))]
         team2 = [r.player for r in list(game.gameplayerrelation_set.filter(team=2))]
         team2_pregame_elo = calculate_team_elo(team2)
@@ -115,7 +118,8 @@ def update_score():
         old_score = player.score
         player.score = season.score(games_played=data['games'],
                                     rounds_played=data['rounds'],
-                                    rounds_won=data['wins'])
+                                    rounds_won=data['wins'],
+                                    player=player)
         if old_score != player.score:
             logging.debug("{} old score: {}, new score {}".format(player.name, old_score, player.score))
             player.save()
