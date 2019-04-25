@@ -2,23 +2,18 @@ version: '3'
 services:
   frisbeer-backend:
     image: frisbeer-backend
-    links:
-    - mariadb
+    depends_on:
+      - db
     build:
       context: ..
       dockerfile: docker/Dockerfile
     ports:
       - "8000:8000"
     volumes:
-      - static-content:/var/static:rw
+      - static-content:/var/www/frisbeer.win/static:rw
 
-  mariadb:
-    image: mariadb:10.3
-    environment:
-      - MYSQL_RANDOM_ROOT_PASSWORD=yes
-      - MYSQL_DATABASE=frisbeer
-      - MYSQL_USER=frisbeer
-      - MYSQL_PASSWORD=supasecret
+  db:
+    image: postgres:11
 
   frisbeer-nginx:
     build:

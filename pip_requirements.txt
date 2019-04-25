@@ -8,4 +8,4 @@ pygments
 markdown
 django-cors-headers
 gunicorn
-mysqlclient
+psycopg2
