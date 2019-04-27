@@ -60,7 +60,7 @@ class Season(models.Model):
             win_rate = rounds_won / rounds_played if rounds_played != 0 else 0
             return int(rounds_won + win_rate * (1 / (1 + exp(3 - games_played / 2.5))) * 1000)
 
-        def score_elo(player):
+        def score_elo(player, *args, **kwargs):
             return player.elo
 
         if self.score_algorithm == Season.ALGORITHM_2017:
