@@ -9,14 +9,14 @@
 {% if teams %}
     <div>
         {% for player in teams.team1 %}
-            {{ player }}
+            <span style="{% if player.rank %}font-weight: bold;{% endif %}">{{ player }} ({{ player.score }})</span>
             {% if not forloop.last %}
                 -
             {% endif %}
         {% endfor %}
         <p>vs.</p>
         {% for player in teams.team2 %}
-            {{ player }}
+            <span style="{% if player.rank %}font-weight: bold;{% endif %}">{{ player }} ({{ player.score }})</span>
             {% if not forloop.last %}
                 -
             {% endif %}
