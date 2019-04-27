@@ -9,6 +9,9 @@ class PlayerInGameInline(admin.TabularInline):
 class GameAdmin(admin.ModelAdmin):
     inlines = [PlayerInGameInline, ]
 
+    def get_changeform_initial_data(self, request):
+        return {'season': Season.current().id }
+
 
 admin.site.register(Player)
 admin.site.register(Game, GameAdmin)
