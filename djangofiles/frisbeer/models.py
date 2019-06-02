@@ -71,6 +71,22 @@ class Season(models.Model):
             return score_elo(*args, **kwargs)
 
 
+class Team(models.Model):
+    name = models.CharField(max_length=100)
+    players = models.ManyToManyField(Player, through="TeamPlayerRelation")
+    season = models.ForeignKey(Season, null=True, on_delete=models.SET_NULL)
+    elo = models.IntegerField(default=1500)
+
+
+class TeamPlayerRelation(models.Model):
+    player = models.ForeignKey(Player, on_delete=models.CASCADE)
+    team = models.ForeignKey(Team, on_delete=models.CASCADE)
+    backup = models.BooleanField(default=False)
+
+    class Meta:
+        unique_together = (("player", "team"))
+
+
 class Game(models.Model):
     PENDING = 0
     READY = 1
