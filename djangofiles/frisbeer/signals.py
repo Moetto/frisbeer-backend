@@ -64,27 +64,27 @@ def update_elo():
         # Perform elo decay before first game of each season
         if game.date.year == 2018 and season == 2017:
             _elo_decay()
-            season = "2018"
-        elif game.date.year == 2019 and season == "2018":
+            season = 2018
+        elif game.date.year == 2019 and season == 2018:
             _elo_decay()
-            season = "2019"
+            season = 2019
         team1 = [r.player for r in list(game.gameplayerrelation_set.filter(team=1))]
         team2 = [r.player for r in list(game.gameplayerrelation_set.filter(team=2))]
         team2_pregame_elo = calculate_team_elo(team2)
         team1_pregame_elo = calculate_team_elo(team1)
+
+        # We only need to calculate elo change for one team, since elo change is the same for all players
+        # and symmetrical between losing and winning sides
+        team1_elo_change = (game.team1_score * calculate_elo_change(team1_pregame_elo, team2_pregame_elo, True)
+                            + game.team2_score * calculate_elo_change(team1_pregame_elo, team2_pregame_elo, False))
+
         for player in team1:
-            player_elo_change = 0
-            player_elo_change += game.team1_score * calculate_elo_change(team1_pregame_elo, team2_pregame_elo, True)
-            player_elo_change += game.team2_score * calculate_elo_change(team1_pregame_elo, team2_pregame_elo, False)
-            player.elo += player_elo_change
-            logging.debug("{0} elo changed {1:0.2f}".format(player.name, player_elo_change))
+            player.elo += team1_elo_change
+            # logging.debug("{0} elo changed {1:0.2f}".format(player.name, team1_elo_change))
             player.save()
         for player in team2:
-            player_elo_change = 0
-            player_elo_change += game.team2_score * calculate_elo_change(team2_pregame_elo, team1_pregame_elo, True)
-            player_elo_change += game.team1_score * calculate_elo_change(team2_pregame_elo, team1_pregame_elo, False)
-            player.elo += player_elo_change
-            logging.debug("{0} elo changed {1:0.2f}".format(player.name, player_elo_change))
+            player.elo -= team1_elo_change
+            # logging.debug("{0} elo changed {1:0.2f}".format(player.name, -team1_elo_change))
             player.save()
 
     # First game not even played yet -> decay
