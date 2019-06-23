@@ -25,25 +25,28 @@ def update_statistics(sender, instance, **kwargs):
     update_elo()
     update_score()
     calculate_ranks()
+    update_team_score()
+
+
+def calculate_elo_change(my_elo, opponent_elo, win):
+    if win:
+        actual_score = 1
+    else:
+        actual_score = 0
+    Ra = my_elo
+    Rb = opponent_elo
+    Ea = 1 / (1 + 10 ** ((Rb - Ra) / 400))
+    return settings.ELO_K * (actual_score - Ea)
 
 
 def update_elo():
     """
-    Calculate new elos for all players. 
-    
+    Calculate new elos for all players.
+
     Update is done for all players because matches are possibly added in non-chronological order
     """
-    logging.info("Updating elos (mabby)")
 
-    def calculate_elo_change(player, opponent_elo, win):
-        if win:
-            actual_score = 1
-        else:
-            actual_score = 0
-        Ra = player
-        Rb = opponent_elo
-        Ea = 1 / (1 + 10 ** ((Rb - Ra) / 400))
-        return settings.ELO_K * (actual_score - Ea)
+    logging.info("Updating elos (mabby)")
 
     def calculate_team_elo(team):
         return sum([player.elo for player in team]) / len(team)
@@ -122,6 +125,28 @@ def update_score():
         if old_score != player.score:
             logging.debug("{} old score: {}, new score {}".format(player.name, old_score, player.score))
             player.save()
+
+def update_team_score():
+    season = Season.current()
+    games = Game.objects.filter(season=season, state=Game.APPROVED)
+
+    for game in games:
+        if not game.can_score():
+            continue
+        team1 = Team.find_or_create(season, (r.player for r in list(game.gameplayerrelation_set.filter(team=1))))
+        team2 = Team.find_or_create(season, (r.player for r in list(game.gameplayerrelation_set.filter(team=2))))
+
+        team1_elo_change = (game.team1_score * calculate_elo_change(team1.elo, team2.elo, True) +
+                            game.team2_score * calculate_elo_change(team1.elo, team2.elo, False))
+
+        team2_elo_change = -team1_elo_change
+
+        # TODO: Calculate elo difference for using substitute player
+
+        team1.elo += team1_elo_change
+        team1.save()
+        team2.elo += team2_elo_change
+        team2.save()
 
 
 def calculate_ranks():
