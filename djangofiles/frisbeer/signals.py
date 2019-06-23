@@ -18,13 +18,12 @@ from frisbeer.models import *
 @receiver(m2m_changed, sender=Game.players.through)
 @receiver(post_save, sender=Game)
 def update_statistics(sender, instance, **kwargs):
-    update_elo()
-    update_score()
-
     if not instance or not instance.can_score():
         logging.debug("Game was saved, but hasn't been played yet. Sender %s, instance %s", sender, instance)
         return
 
+    update_elo()
+    update_score()
     calculate_ranks()
 
 
