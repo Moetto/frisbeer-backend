@@ -77,6 +77,20 @@ class Team(models.Model):
     season = models.ForeignKey(Season, null=True, on_delete=models.SET_NULL)
     elo = models.IntegerField(default=1500)
 
+    @classmethod
+    def find_or_create(cls, season, players):
+        teams_queryset = cls.objects.filter(season=season)
+        for player in players:
+            teams_queryset.filter(players=player)
+        if teams_queryset:
+            return teams_queryset.first()
+        else:
+            name = "".join(p.name for p in players)
+            new_team = cls.objects.create(name=name, season=season)
+            for p in players:
+                TeamPlayerRelation.objects.create(player=p, team=new_team)
+            return new_team
+
 
 class TeamPlayerRelation(models.Model):
     player = models.ForeignKey(Player, on_delete=models.CASCADE)
