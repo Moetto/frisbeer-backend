@@ -126,22 +126,32 @@ def update_score():
             logging.debug("{} old score: {}, new score {}".format(player.name, old_score, player.score))
             player.save()
 
+BACKUP_PENALTY_PERCENT = 22.45
+
 def update_team_score():
+    Team.objects.filter(virtual=True).delete()
+    Team.objects.all().update(elo=1500)
     season = Season.current()
-    games = Game.objects.filter(season=season, state=Game.APPROVED)
+    games = Game.objects.filter(season=season, state=Game.APPROVED).order_by("date")
 
     for game in games:
         if not game.can_score():
             continue
-        team1 = Team.find_or_create(season, (r.player for r in list(game.gameplayerrelation_set.filter(team=1))))
-        team2 = Team.find_or_create(season, (r.player for r in list(game.gameplayerrelation_set.filter(team=2))))
+        team1 = Team.find_or_create(season, [r.player for r in list(game.gameplayerrelation_set.filter(team=1))])
+        team2 = Team.find_or_create(season, [r.player for r in list(game.gameplayerrelation_set.filter(team=2))])
 
         team1_elo_change = (game.team1_score * calculate_elo_change(team1.elo, team2.elo, True) +
                             game.team2_score * calculate_elo_change(team1.elo, team2.elo, False))
 
         team2_elo_change = -team1_elo_change
 
-        # TODO: Calculate elo difference for using substitute player
+        winning_team = team1 if game.team1_score > game.team2_score else team2
+        if any(p.backup for p in winning_team.team_players.all()):
+            penalty_factor = 1 - (BACKUP_PENALTY_PERCENT / 100)
+            if winning_team is team1 and team1_elo_change > 0:
+                team1_elo_change *= penalty_factor
+            elif team2_elo_change > 0:
+                team2_elo_change *= penalty_factor
 
         team1.elo += team1_elo_change
         team1.save()
@@ -167,9 +177,9 @@ def calculate_ranks():
     season = Season.current()
     for player in players:
         s1 = player.gameplayerrelation_set.filter(team=1, game__season_id=season.id) \
-                 .aggregate(Sum('game__team1_score'))["game__team1_score__sum"] or 0
+                   .aggregate(Sum('game__team1_score'))["game__team1_score__sum"] or 0
         s2 = player.gameplayerrelation_set.filter(team=2, game__season_id=season.id) \
-                 .aggregate(Sum('game__team2_score'))["game__team2_score__sum"] or 0
+                   .aggregate(Sum('game__team2_score'))["game__team2_score__sum"] or 0
         if s1 + s2 > 4:
             player_list.append(player)
 

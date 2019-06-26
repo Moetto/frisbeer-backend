@@ -99,7 +99,7 @@ class Team(models.Model):
 
 class TeamPlayerRelation(models.Model):
     player = models.ForeignKey(Player, on_delete=models.CASCADE)
-    team = models.ForeignKey(Team, on_delete=models.CASCADE)
+    team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name="team_players")
     backup = models.BooleanField(default=False)
 
     class Meta:
