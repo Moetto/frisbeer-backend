@@ -76,17 +76,22 @@ class Team(models.Model):
     players = models.ManyToManyField(Player, through="TeamPlayerRelation")
     season = models.ForeignKey(Season, null=True, on_delete=models.SET_NULL)
     elo = models.IntegerField(default=1500)
+    virtual = models.BooleanField(default=False)
+
+    def __str__(self):
+        return self.name
 
     @classmethod
     def find_or_create(cls, season, players):
         teams_queryset = cls.objects.filter(season=season)
         for player in players:
-            teams_queryset.filter(players=player)
+            teams_queryset = teams_queryset.filter(players=player)
         if teams_queryset:
-            return teams_queryset.first()
+            team = teams_queryset.order_by('virtual').first()
+            return team
         else:
             name = "".join(p.name for p in players)
-            new_team = cls.objects.create(name=name, season=season)
+            new_team = cls.objects.create(name=name, season=season, virtual=True)
             for p in players:
                 TeamPlayerRelation.objects.create(player=p, team=new_team)
             return new_team
