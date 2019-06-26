@@ -13,8 +13,17 @@ class GameAdmin(admin.ModelAdmin):
         return {'season': Season.current().id }
 
 
+class PlayerInTeamInline(admin.TabularInline):
+    model = TeamPlayerRelation
+
+
+class TeamAdmin(admin.ModelAdmin):
+    inlines = [PlayerInTeamInline]
+
+
 admin.site.register(Player)
 admin.site.register(Game, GameAdmin)
 admin.site.register(Location)
 admin.site.register(Rank)
 admin.site.register(Season)
+admin.site.register(Team, TeamAdmin)
