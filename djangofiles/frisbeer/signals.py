@@ -53,11 +53,11 @@ def update_elo():
 
     def _elo_decay():
         # Halves the distance from median elo for all players
-        Player.objects.all().update(elo=(F('elo') - 1500) / 2 + 1500)
+        Player.objects.all().update(elo=(F('elo') - 1500) / 2 + 1500, season_best=0)
 
     games = Game.objects.filter(state=Game.APPROVED).order_by("date")
 
-    Player.objects.all().update(elo=1500)
+    Player.objects.all().update(elo=1500, season_best=0)
 
     season = 2017
 
@@ -84,10 +84,14 @@ def update_elo():
         for player in team1:
             player.elo += team1_elo_change
             # logging.debug("{0} elo changed {1:0.2f}".format(player.name, team1_elo_change))
+            if player.elo > player.season_best:
+                player.season_best = player.elo
             player.save()
         for player in team2:
             player.elo -= team1_elo_change
             # logging.debug("{0} elo changed {1:0.2f}".format(player.name, -team1_elo_change))
+            if player.elo > player.season_best:
+                player.season_best = player.elo
             player.save()
 
     # First game not even played yet -> decay
@@ -130,7 +134,7 @@ BACKUP_PENALTY_PERCENT = 22.45
 
 def update_team_score():
     Team.objects.filter(virtual=True).delete()
-    Team.objects.all().update(elo=1500)
+    Team.objects.all().update(elo=1500, season_best=0)
     season = Season.current()
     games = Game.objects.filter(season=season, state=Game.APPROVED).order_by("date")
 
@@ -154,8 +158,12 @@ def update_team_score():
                 team2_elo_change *= penalty_factor
 
         team1.elo += team1_elo_change
+        if team1.elo > team1.season_best:
+            team1.season_best = team1.elo
         team1.save()
         team2.elo += team2_elo_change
+        if team2.elo > team2.season_best:
+            team2.season_best = team2.elo
         team2.save()
 
 

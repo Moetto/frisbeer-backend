@@ -52,8 +52,8 @@ class PlayerSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Player
-        fields = ('id', 'name', 'score', 'rank')
-        read_only_fields = ('score', 'rank', 'id')
+        fields = ('id', 'name', 'score', 'rank', 'season_best')
+        read_only_fields = ('score', 'rank', 'id', 'season_best')
 
 
 class PlayersValidator:
