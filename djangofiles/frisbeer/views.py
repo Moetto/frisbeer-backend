@@ -13,7 +13,7 @@ from rest_framework.viewsets import GenericViewSet
 
 from frisbeer.models import *
 from frisbeer.serializers import RankSerializer, PlayerSerializer, PlayerInGameSerializer, GameSerializer, \
-    LocationSerializer
+    LocationSerializer, TeamSerializer
 
 
 class RankViewSet(mixins.RetrieveModelMixin, mixins.ListModelMixin, GenericViewSet):
@@ -29,6 +29,11 @@ class PlayerViewSet(viewsets.ModelViewSet):
 class PlayerInGameViewSet(viewsets.ModelViewSet):
     queryset = GamePlayerRelation.objects.all()
     serializer_class = PlayerInGameSerializer
+
+
+class TeamViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = Team.objects.all()
+    serializer_class = TeamSerializer
 
 
 class GameViewSet(viewsets.ModelViewSet):

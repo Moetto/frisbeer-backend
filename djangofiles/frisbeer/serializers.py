@@ -2,7 +2,7 @@ from django.templatetags.static import static
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
-from frisbeer.models import Rank, Player, GamePlayerRelation, Game, Location
+from frisbeer.models import Rank, Player, GamePlayerRelation, Game, Location, Team
 
 
 class LocationSerializer(serializers.ModelSerializer):
@@ -164,3 +164,9 @@ class GameSerializer(serializers.ModelSerializer):
             s.create_teams()
 
         return s
+
+
+class TeamSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Team
+        fields = '__all__'
