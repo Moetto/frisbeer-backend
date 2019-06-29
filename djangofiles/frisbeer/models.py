@@ -78,6 +78,9 @@ class Team(models.Model):
     elo = models.IntegerField(default=1500)
     virtual = models.BooleanField(default=False)
 
+    class Meta:
+        ordering = ('-elo',)
+
     def __str__(self):
         return self.name
 
