@@ -139,6 +139,11 @@ class Game(models.Model):
     class Meta:
         ordering = ('-date',)
 
+    def save(self, *args, **kwargs):
+        if not self.season:
+            self.season = Season.current()
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return "{0} {2} - {3} {1}".format(
             ", ".join(
