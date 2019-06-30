@@ -151,6 +151,20 @@ class Game(models.Model):
     class Meta:
         ordering = ('-date',)
 
+    def _team(self, side):
+        try:
+            return GameTeamRelation.objects.get(game=self, side=side).team
+        except GameTeamRelation.DoesNotExist:
+            return None
+
+    @property
+    def team1(self):
+        return self._team(1)
+
+    @property
+    def team2(self):
+        return self._team(2)
+
     def save(self, *args, **kwargs):
         if not self.season:
             self.season = Season.current()
@@ -158,9 +172,9 @@ class Game(models.Model):
 
     def __str__(self):
         return "{0} {2} - {3} {1}".format(
-            ", ".join(
+            self.team1.name if self.team1 and not self.team1.virtual else ", ".join(
                 self.players.filter(gameplayerrelation__team=GamePlayerRelation.Team1).values_list("name", flat=True)),
-            ", ".join(
+            self.team2.name if self.team2 and not self.team2.virtual else ", ".join(
                 self.players.filter(gameplayerrelation__team=GamePlayerRelation.Team2).values_list("name", flat=True)),
             self.team1_score,
             self.team2_score,

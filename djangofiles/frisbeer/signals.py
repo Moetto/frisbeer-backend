@@ -146,8 +146,8 @@ def update_team_score():
         team1 = Team.find_or_create(season, [r.player for r in list(game.gameplayerrelation_set.filter(team=1))])
         team2 = Team.find_or_create(season, [r.player for r in list(game.gameplayerrelation_set.filter(team=2))])
 
-        GameTeamRelation.objects.create(side=1, team=team1, game=game)
-        GameTeamRelation.objects.create(side=2, team=team2, game=game)
+        GameTeamRelation.objects.update_or_create(side=1, game=game, defaults={'team': team1})
+        GameTeamRelation.objects.update_or_create(side=2, game=game, defaults={'team': team2})
 
         team1_elo_change = (game.team1_score * calculate_elo_change(team1.elo, team2.elo, True) +
                             game.team2_score * calculate_elo_change(team1.elo, team2.elo, False))
