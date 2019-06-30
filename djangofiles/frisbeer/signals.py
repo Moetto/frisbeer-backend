@@ -130,7 +130,9 @@ def update_score():
             logging.debug("{} old score: {}, new score {}".format(player.name, old_score, player.score))
             player.save()
 
+
 BACKUP_PENALTY_PERCENT = 22.45
+
 
 def update_team_score():
     Team.objects.filter(virtual=True).delete()
@@ -143,6 +145,9 @@ def update_team_score():
             continue
         team1 = Team.find_or_create(season, [r.player for r in list(game.gameplayerrelation_set.filter(team=1))])
         team2 = Team.find_or_create(season, [r.player for r in list(game.gameplayerrelation_set.filter(team=2))])
+
+        GameTeamRelation.objects.create(side=1, team=team1, game=game)
+        GameTeamRelation.objects.create(side=2, team=team2, game=game)
 
         team1_elo_change = (game.team1_score * calculate_elo_change(team1.elo, team2.elo, True) +
                             game.team2_score * calculate_elo_change(team1.elo, team2.elo, False))

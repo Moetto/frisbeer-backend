@@ -169,4 +169,4 @@ class GameSerializer(serializers.ModelSerializer):
 class TeamSerializer(serializers.ModelSerializer):
     class Meta:
         model = Team
-        fields = '__all__'
+        fields = ('name', 'elo', 'season_best', 'games_played', 'virtual')

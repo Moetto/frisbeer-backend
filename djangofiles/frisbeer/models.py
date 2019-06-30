@@ -101,6 +101,13 @@ class Team(models.Model):
                 TeamPlayerRelation.objects.create(player=p, team=new_team)
             return new_team
 
+    @property
+    def games_played(self):
+        season = Season.current()
+        games = self.games.filter(season=season)
+        return games.count()
+
+
 
 class TeamPlayerRelation(models.Model):
     player = models.ForeignKey(Player, on_delete=models.CASCADE)
@@ -129,6 +136,9 @@ class Game(models.Model):
     name = models.CharField(max_length=250, blank=True, null=True)
     description = models.TextField(max_length=2500, blank=True, null=True)
     location = models.ForeignKey('Location', blank=True, null=True)
+
+    teams = models.ManyToManyField(Team, related_name='games', through='GameTeamRelation')
+
     team1_score = models.IntegerField(default=0, choices=((0, 0), (1, 1), (2, 2)))
     team2_score = models.IntegerField(default=0, choices=((0, 0), (1, 1), (2, 2)))
     state = models.IntegerField(choices=game_state_choices, default=PENDING,
@@ -197,6 +207,15 @@ class GamePlayerRelation(models.Model):
     player = models.ForeignKey(Player, on_delete=models.CASCADE)
     game = models.ForeignKey(Game, on_delete=models.CASCADE)
     team = models.IntegerField(choices=_team_choices, default=Unassigned)
+
+
+class GameTeamRelation(models.Model):
+    side = models.IntegerField(choices=((1, 1), (2, 2)))
+    team = models.ForeignKey(Team, on_delete=models.SET_NULL, null=True)
+    game = models.ForeignKey(Game, on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = (("team", "game"), ("side", "game"))
 
 
 class Location(models.Model):
