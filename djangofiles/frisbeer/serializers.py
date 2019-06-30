@@ -2,7 +2,7 @@ from django.templatetags.static import static
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
-from frisbeer.models import Rank, Player, GamePlayerRelation, Game, Location, Team
+from frisbeer.models import Rank, Player, GamePlayerRelation, Game, Location, Team, GameTeamRelation
 
 
 class LocationSerializer(serializers.ModelSerializer):
@@ -75,9 +75,19 @@ class PlayerInGameSerializer(serializers.HyperlinkedModelSerializer):
         fields = ('id', 'name', 'team', 'rank', 'score')
 
 
+class TeamInGameSerializer(serializers.ModelSerializer):
+    name = serializers.ReadOnlyField(source='team.name')
+    side = serializers.IntegerField(read_only=True)
+
+    class Meta:
+        model = GameTeamRelation
+        fields = ('name', 'side')
+
+
 class GameSerializer(serializers.ModelSerializer):
     location_repr = LocationSerializer(source='location', read_only=True)
     players = PlayerInGameSerializer(many=True, source='gameplayerrelation_set', partial=True, required=False)
+    teams = TeamInGameSerializer(many=True, source='gameteamrelation_set', partial=True, required=False)
 
     class Meta:
         model = Game
